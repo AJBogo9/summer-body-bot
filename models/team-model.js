@@ -12,16 +12,15 @@ const teamSchema = new mongoose.Schema({
   }],
   guild: {
     type: String, 
-    enum: ['TIK', 'PT'], 
+    enum: ['TiK', 'DG', 'FK', 'PT', 'AS', 'SIK', 'KIK', 'MK', 'IK', 'Athene', 'Prodeko', 'Inkubio'], 
     required: true 
   },
   points: {
     exercise: { type: Number, default: 0 },
-    trySport: { type: Number, default: 0 },
     sportsTurn: { type: Number, default: 0 },
+    trySport: { type: Number, default: 0 },
     tryRecipe: { type: Number, default: 0 },
     goodSleep: { type: Number, default: 0 },
-    meditate: { type: Number, default: 0 },
     lessAlc: { type: Number, default: 0 },
     total: { type: Number, default: 0 },
   },

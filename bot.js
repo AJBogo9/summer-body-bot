@@ -28,6 +28,7 @@ const { teamMemberRankingsScene } = require('./flows/statistics-flows/team-membe
 const { userSummaryScene } = require('./flows/statistics-flows/user-summary')
 const { guildStandingsScene } = require('./flows/statistics-flows/guild-standings')
 const { guildComparisonScene } = require('./flows/statistics-flows/guild-comparison')
+const { topUsersScene } = require('./flows/statistics-flows/top-users')
 
 const onlyPrivate = require('./utils/check-private')
 //const isCompetitionActive = require('./utils/is-comp-active')
@@ -50,6 +51,7 @@ const stage = new Scenes.Stage([
                 userSummaryScene,
                 guildStandingsScene,
                 guildComparisonScene,
+                topUsersScene,
               ])
 
 bot.use(session()) //TODO: Change to use mongoDb session etc
@@ -61,26 +63,28 @@ bot.use(stage.middleware())
 //   }
 // })
 
+bot.command('help', (ctx) => { ctx.scene.enter('help_scene') })
+
 bot.command('start', onlyPrivate, (ctx) => { ctx.scene.enter('start_wizard') })
 bot.command('howtogetpoints', onlyPrivate, (ctx) => { ctx.scene.enter('how_to_get_points_scene') })
 bot.command('statsinfo', onlyPrivate, (ctx) => { ctx.scene.enter('stats_info_scene') })
-bot.command('help', (ctx) => { ctx.scene.enter('help_scene') })
 bot.command('terms', onlyPrivate, (ctx) => { ctx.scene.enter('terms_scene') })
 
 bot.command('rmuser', onlyPrivate, (ctx) => { ctx.scene.enter('delete_user_wizard') })
 bot.command('register', onlyPrivate, (ctx) => { ctx.scene.enter('register_wizard') })
-//remember to change help etc.
-//bot.command('createteam', onlyPrivate, (ctx) => { ctx.scene.enter('create_team_wizard') })
-//bot.command('jointeam', onlyPrivate, (ctx) => { ctx.scene.enter('join_team_wizard') })
+bot.command('createteam', onlyPrivate, (ctx) => { ctx.scene.enter('create_team_wizard') })
+bot.command('jointeam', onlyPrivate, (ctx) => { ctx.scene.enter('join_team_wizard') })
 bot.command('weekscores', onlyPrivate, (ctx) => { ctx.scene.enter('week_scores_wizard') })
 
 bot.command('leaderboards', (ctx) => { ctx.scene.enter('team_rankings_scene') })
 bot.command('team', (ctx) => { ctx.scene.enter('team_member_rankings_scene') })
 bot.command('summary', (ctx) => { ctx.scene.enter('user_summary_scene') })
-bot.command('tikvspt', (ctx) => { ctx.scene.enter('guild_standings_scene') })
-bot.command('tikvsptall', (ctx) => { ctx.scene.enter('guild_comparison_scene') })
+bot.command('topguilds', (ctx) => { ctx.scene.enter('guild_standings_scene') })
+bot.command('topguildsall', (ctx) => { ctx.scene.enter('guild_comparison_scene') })
+bot.command('topusers', (ctx) => { ctx.scene.enter('top_users_scene') })
 
-bot.command('dumbahhbot', (ctx) => { ctx.reply('yo mama')})
+//bot.command('dumbahhbot', (ctx) => { ctx.reply('yo mama')})
+//bot.command('yomama', (ctx) => { ctx.replyWithSticker('CAACAgQAAxkBAAIFJ2Xy4dBcnwPBbamQiGVerGcMziY-AAINAAPBHkwgKWSr0-m_FIE0BA') })
 
 bot.catch((err, ctx) => { 
   console.error(`Encountered an error for ${ctx.updateType}`, err) 

@@ -1,12 +1,19 @@
 const { Scenes } = require('telegraf')
 const pointService = require('../../services/point-service')
+const userService = require('../../services/user-service')
 const texts = require('../../utils/texts')
 const { formatList } = require('../../utils/format-list')
 
+// summary command
 const userSummaryScene = new Scenes.BaseScene('user_summary_scene')
 userSummaryScene.enter(async (ctx) => {
   try {
     const userId = ctx.from.id
+    const user = await userService.findUser(userId)
+    if (!user) {
+      await ctx.reply("User not found. Please register first using /register.")
+      return ctx.scene.leave()
+    }
     const [summary] = await Promise.all([
       pointService.getUserSummary(userId),
     ])
@@ -21,7 +28,6 @@ userSummaryScene.enter(async (ctx) => {
     message += formatList('Sports Turn', summary.sportsTurn, titlePadding, valuePadding, 'pts') + '\n'
     message += formatList('Try Recipe', summary.tryRecipe, titlePadding, valuePadding, 'pts') + '\n'
     message += formatList('Good Sleep', summary.goodSleep, titlePadding, valuePadding, 'pts') + '\n'
-    message += formatList('Meditate', summary.meditate, titlePadding, valuePadding, 'pts') + '\n'
     message += formatList('Less Alcohol', summary.lessAlc, titlePadding, valuePadding, 'pts') + '\n'   
 
     await ctx.reply(message, { parse_mode: 'MarkdownV2' })

@@ -3,13 +3,18 @@ const pointService = require('../../services/point-service')
 const texts = require('../../utils/texts')
 const { formatList } = require('../../utils/format-list')
 
+// leaderboards command
 const teamRankingsScene = new Scenes.BaseScene('team_rankings_scene')
 teamRankingsScene.enter(async (ctx) => {
   try {
     const rankings = await pointService.getTeamRankings()
-    let message = '*Team Rankings \\(pts/team member\\)* 🏆\n\n'
-    const titlePadding = 25 
-    const valuePadding = 10
+    if (!rankings || rankings.length === 0) {
+      await ctx.reply("No team rankings available.")
+      return ctx.scene.leave()
+    }
+    let message = '*Team Rankings \\(by average points\\)* ⚡\n\n'
+    const titlePadding = 25
+    const valuePadding = 8
 
     rankings.forEach((team, index) => {
       const rank = (index + 1).toString() + '.'

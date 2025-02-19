@@ -3,10 +3,15 @@ const pointService = require('../../services/point-service')
 const texts = require('../../utils/texts')
 const { formatList } = require('../../utils/format-list')
 
+// topguildsall
 const guildComparisonScene = new Scenes.BaseScene('guild_comparison_scene')
 guildComparisonScene.enter(async (ctx) => {
   try {
     const standings = await pointService.getGuildsTotals()
+    if (!standings || standings.length === 0) {
+      await ctx.reply("No guild data available.")
+      return ctx.scene.leave()
+    }
     standings.sort((a, b) => b.total.average - a.total.average)
 
     const titlePadding = 15
@@ -14,28 +19,25 @@ guildComparisonScene.enter(async (ctx) => {
 
     let message = '*Guilds Comparison* 🏆\n\n'
 
-    message += '*Average/Total points*\n'
+    message += '*Average / Total points*\n'
     standings.forEach(guild => {
-      const guildNameFixed = guild.guild === 'TIK' ? 'TiK' : guild.guild
       const text = `\(${guild.total.average.toString()}/${guild.total.total.toString()}\)`
-      message += formatList(guildNameFixed, text, titlePadding, valuePadding) + '\n'
+      message += formatList(guild.guild, text, titlePadding, valuePadding) + '\n'
     })
 
     message += '\n'
     message += '*Participants*\n'
     const participants = standings.sort((a, b) => b.participants - a.participants)
     participants.forEach(guild => {
-      const guildNameFixed = guild.guild === 'TIK' ? 'TiK' : guild.guild
-      message += formatList(guildNameFixed, guild.participants, titlePadding, valuePadding) + '\n'
+      message += formatList(guild.guild, guild.participants, titlePadding, valuePadding) + '\n'
     })
 
     const categories = {
       exercise: 'Exercise',
+      sportsTurn: 'Sports Sessions Participation',
       trySport: 'Trying New Sports',
-      sportsTurn: 'Sports turn Participation',
       tryRecipe: 'Trying New Recipe',
       goodSleep: 'Quality Sleep',
-      meditate: 'Meditation',
       lessAlc: 'Less Alcohol'
     }
 
@@ -46,10 +48,9 @@ guildComparisonScene.enter(async (ctx) => {
       message += `*${categories[categoryKey]}*\n`
       const sortedGuilds = standings.sort((a, b) => b[categoryKey].total - a[categoryKey].total)
       
-      sortedGuilds.forEach(guild => {
-        const guildNameFixed = guild.guild === 'TIK' ? 'TiK' : guild.guild     
+      sortedGuilds.forEach(guild => { 
         const points = `${guild[categoryKey].total.toString()}`
-        message += formatList(guildNameFixed, points, titlePadding, valuePadding) + '\n'
+        message += formatList(guild.guild, points, titlePadding, valuePadding) + '\n'
       })
       message += '\n'
     })

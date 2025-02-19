@@ -1,36 +1,36 @@
-# BOT Telegram
+# SummerBodyBot
 
-This is a telegram bot for the use of ... TODO:täydennä
+SummerBodyBot is a Telegram bot designed to track and record competition scores among Aalto guilds and within teams. Participants can register, join or create teams, log weekly activities to earn points, and view various rankings and statistics. The bot is free to use and its functionality may be updated or modified at any time.
 
 ## Core Stack
 
-- **Node.js** - [nodejs.org](http://nodejs.org/)
-- **Telegraf** - [telegraf.js.org](https://telegraf.js.org/#/)
-- **Mongo DB** - [mongodb.github.io/node-mongodb-native](https://mongodb.github.io/node-mongodb-native/)
-- **Docker** - [https://docs.docker.com/get-docker/](https://docs.docker.com/get-docker/)
+- **Node.js** – [nodejs.org](http://nodejs.org/)
+- **Telegraf** – [telegraf.js.org](https://telegraf.js.org/#/)
+- **MongoDB** – [mongodb.github.io/node-mongodb-native](https://mongodb.github.io/node-mongodb-native/)
+- **Docker** – [docs.docker.com](https://docs.docker.com/get-docker/)
 
 ## Quick Start
 
-Clone project and install dependencies:
+Clone the repository and install dependencies:
 
 ```bash
-git clone https://github.com/arttukauppinen/summer-body-bot.git
+git clone https://github.com/YourUsername/summer-body-bot.git
 cd summer-body-bot
 ```
 
-Build the application:
+Build the Docker image:
 
 ```bash
 sudo docker build -t summer-body-bot .
 ```
 
-Start the server (optional if running without docker):
+Start the server (or run locally):
 
 ```bash
 sudo docker run -d --name summer-body-bot summer-body-bot
 ```
 
-Stop the server (optional if running without docker):
+Stop the server:
 
 ```bash
 sudo docker stop summer-body-bot
@@ -39,39 +39,60 @@ sudo docker stop summer-body-bot
 Run tests (tester apps):
 
 ```bash
-
+// TODO
 ```
 
 ## Project Structure
 
 ```
 .
-├── controllers/                        # Handles different aspects of bot interactions
-|   ├── create-team-controller.js
-|   ├── start-controller.js
-|   └── weekly-points-controller.js
-├── models/                             # Contains Mongoose models for the application's data structure
-|   ├── team-model.js
-|   └── user-model.js
-├── services/                           # Business logic services for handling database operations
-|   ├── point-service.js
-|   ├── team-service.js
-|   └── user-service.js
-├── utils/                              # Utility functions and shared code
-|   └── texts.js                        # Text messages used by the bot
-├── bot.js                              # Telegram bot setup and middleware
-├── config.js                           # Configuration settings for the application, such as environment variable management
-├── database.js                         # Database connection and configuration
-├── index.js                            # Entry point of the application to launch the bot
-└── jobs.js                             # Scheduled jobs and repetitive tasks handling
-
+├── .github
+│   └── workflows
+│       └── deploy.yml             # GitHub Actions workflow for deployment
+├── bot.js                         # Telegram bot setup and middleware
+├── config.js                      # Configuration settings (env variables, etc.)
+├── database.js                    # MongoDB connection and configuration
+├── deploy-script.sh               # Script to deploy the bot via Docker
+├── Dockerfile                     # Docker configuration file
+├── flows                          # Conversation flows for the bot
+│   ├── information-flows
+│   │   ├── help.js
+│   │   ├── how-to-points.js
+│   │   ├── start.js
+│   │   ├── stats-info.js
+│   │   └── terms.js
+│   ├── statistics-flows
+│   │   ├── guild-comparison.js
+│   │   ├── guild-standings.js
+│   │   ├── team-member-rankings.js
+│   │   ├── team-rankings.js
+│   │   └── top-users.js
+│   ├── create-team.js
+│   ├── delete-user.js
+│   ├── join-team.js
+│   ├── register.js
+│   └── week-scores.js
+├── models                         # Mongoose models for the application
+│   ├── team-model.js
+│   └── user-model.js
+├── services                       # Business logic services
+│   ├── point-service.js
+│   ├── team-service.js
+│   └── user-service.js
+└── utils                          # Utility functions and shared code
+    ├── can-add-points.js
+    ├── check-private.js
+    ├── exit-on-text.js
+    ├── format-list.js
+    ├── is-comp-active.js
+    ├── schedule-reminders.js
+    ├── texts.js
+    └── validate-team-name.js
 ```
 
 ## License
 
-Copyright (c) 2024
-
-TODO: onks tarpeellinen
+Copyright (c) 2025
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

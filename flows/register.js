@@ -3,6 +3,7 @@ const teamService = require('../services/team-service')
 const userService = require('../services/user-service')
 const texts = require('../utils/texts')
 const validateTeamName = require('../utils/validate-team-name')
+const User = require('../models/user-model');
 
 const cancelAndExitKeyboard = Markup.inlineKeyboard([
   Markup.button.callback('Cancel', 'cancel')
@@ -14,8 +15,8 @@ const registerWizard = new Scenes.WizardScene(
     const userId = ctx.from.id
     const user = await userService.findUser(userId)
     if (user) {
-        //await ctx.reply("You've already registered. You can still /createteam or /jointeam")
-        await ctx.reply("You've already registered.")
+        await ctx.reply("You've already registered. You can still /createteam or /jointeam")
+        // await ctx.reply("You've already registered.")
         return ctx.scene.leave()
     } else {
         await ctx.reply(texts.terms.question, Markup.inlineKeyboard([
@@ -25,7 +26,6 @@ const registerWizard = new Scenes.WizardScene(
         return ctx.wizard.next()
     }
   },
-  // Callback handlers below manage term acceptance and guild/team selection
   async (ctx) => {
     const userId = ctx.from.id
     const user = await userService.findUser(userId)
@@ -83,13 +83,14 @@ const registerWizard = new Scenes.WizardScene(
 registerWizard.action('accept_terms', async (ctx) => {
   await ctx.answerCbQuery()
   await ctx.editMessageText('You accepted the terms and conditions.')
+  const validGuilds = User.validGuilds
   await ctx.reply(
     'Please select your guild:',
-    Markup.inlineKeyboard([
-        Markup.button.callback('PT', 'select_guild_PT'),
-        Markup.button.callback('TiK', 'select_guild_TIK'),
-        Markup.button.callback('Cancel & Exit', 'exit_wizard')
-    ])
+    Markup.inlineKeyboard(
+      validGuilds
+        .map(g => [Markup.button.callback(g, `select_guild_${g}`)])
+        .concat([[Markup.button.callback('Cancel & Exit', 'exit_wizard')]])
+    )
   )
 })
 
@@ -115,13 +116,13 @@ registerWizard.action(/^select_guild_(.+)$/, async (ctx) => {
             name: fullName,
             guild: guild,
         })
-        await ctx.editMessageText(`You successfully registered with the ${guild === 'TIK' ? 'TiK' : guild} Kesäkuntoon team`)
+        await ctx.editMessageText(`You successfully registered to the ${guild} Kesäkuntoon team`)
         await ctx.reply(
           'Would you like to create a new team or join an existing one?',
           Markup.inlineKeyboard([
             Markup.button.callback('Create new team', 'new_team'),
             Markup.button.callback('Join existing team', 'existing_team'),
-            Markup.button.callback('Cancel & Exit', 'exit_wizard')
+            Markup.button.callback('Save & Exit', 'register_exit_wizard')
           ]),
           { parse_mode: 'Markdown' }
         )
@@ -135,7 +136,7 @@ registerWizard.action('new_team', async (ctx) => {
   ctx.wizard.state.action = 'create'
 
   await ctx.answerCbQuery()
-  await ctx.editMessageText('You chose to create a new team. Give name for your team', cancelAndExitKeyboard)
+  await ctx.editMessageText('You chose to create a new team. Give a name for your team', cancelAndExitKeyboard)
 
 })
 
@@ -148,6 +149,11 @@ registerWizard.action('existing_team', async (ctx) => {
 
 registerWizard.action('exit_wizard', async (ctx) => {
   await ctx.editMessageText('Canceled & Exited. Start again with /register')
+  return ctx.scene.leave()
+})
+
+registerWizard.action('register_exit_wizard', async (ctx) => {
+  await ctx.editMessageText(`You successfully registered with the ${ctx.wizard.state.guild} guild. You can use /createteam or /jointeam if you want to create or join a team`)
   return ctx.scene.leave()
 })
 

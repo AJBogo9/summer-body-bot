@@ -20,16 +20,15 @@ const userSchema = new mongoose.Schema({
   },
   guild: {
     type: String, 
-    enum: ['TIK', 'PT'], 
+    enum: ['TiK', 'DG', 'FK', 'PT', 'AS', 'SIK', 'KIK', 'MK', 'IK', 'Athene', 'Prodeko', 'Inkubio'], 
     required: true 
   },
   points: {
     exercise: { type: Number, default: 0 },
-    trySport: { type: Number, default: 0 },
     sportsTurn: { type: Number, default: 0 },
+    trySport: { type: Number, default: 0 },
     tryRecipe: { type: Number, default: 0 },
     goodSleep: { type: Number, default: 0 },
-    meditate: { type: Number, default: 0 },
     lessAlc: { type: Number, default: 0 },
     total: { type: Number, default: 0 },
   },
@@ -41,4 +40,9 @@ const userSchema = new mongoose.Schema({
 
 userSchema.index({ team: 1 })
 
-module.exports = mongoose.model('User', userSchema)
+const User = mongoose.model('User', userSchema)
+
+User.validCategories = Object.keys(userSchema.obj.points)
+User.validGuilds = userSchema.obj.guild.enum
+
+module.exports = User

@@ -3,24 +3,29 @@ const pointService = require('../../services/point-service')
 const texts = require('../../utils/texts')
 const { formatList } = require('../../utils/format-list')
 
+// topguilds command
 const guildStandingsScene = new Scenes.BaseScene('guild_standings_scene')
 guildStandingsScene.enter(async (ctx) => {
   try {
     const averages = await pointService.getGuildsLeaderboards()
+    if (!averages || averages.length === 0) {
+      await ctx.reply("No guild statistics available.")
+      return ctx.scene.leave()
+    }
     averages.sort((a, b) => b.average - a.average)
 
-    let message = '*Standings \\(pts/participant\\)* 🏆\n\n'
+    let message = '*Standings \\(by average points\\)* 🏆\n\n'
 
     const guildPadding = 10
     const pointPadding = 15
 
-    const isTie = averages[0].average === averages[1].average
-    const emojis = isTie ? ['🤝', '🤝'] : ['🥇', '🥈']
+    // const isTie = averages[0].average === averages[1].average
+    const emojis = ['🥇', '🥈', '🥉', ' ⒋ ', ' ⒌ ', ' ⒍ ', ' ⒎ ', ' ⒏ ', ' ⒐ ', ' ⒑ ', ' ⒒ ', ' ⒓ ', ' ⒔ ', ' ⒕ ', ' ⒖ ', ' ⒗ ', ' ⒘ ', ' ⒙ ', ' ⒚ ', ' ⒛ ']
 
     averages.forEach((guild, index) => {
-      const guildName = guild.guild === 'TIK' ? 'TiK' : guild.guild
       const pointsText = guild.average.toString()
-      message += emojis[index] + formatList(guildName, pointsText, guildPadding, pointPadding) + '\n'
+      const emoji = index < emojis.length ? emojis[index] : `${index + 1}`
+      message += emoji + formatList(guild.guild, pointsText, guildPadding, pointPadding) + '\n'
     })
 
     await ctx.reply(message, { parse_mode: 'MarkdownV2' })
