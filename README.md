@@ -36,6 +36,13 @@ Stop the server:
 sudo docker stop summer-body-bot
 ```
 
+To populate test data or generate statistics PDFs, run the provided scripts:
+
+```bash
+node populateTestData.js
+node generateStatsPDF.js
+```
+
 Run tests (tester apps):
 
 ```bash
@@ -75,6 +82,8 @@ Run tests (tester apps):
 ├── models                         # Mongoose models for the application
 │   ├── team-model.js
 │   └── user-model.js
+├── populateTestData.js            # Script to generate test data
+├── generateStatsPDF.js            # Script to produce competition statistics as a PDF
 ├── services                       # Business logic services
 │   ├── point-service.js
 │   ├── team-service.js
