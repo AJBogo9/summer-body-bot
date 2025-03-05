@@ -58,12 +58,13 @@ async function populateData() {
         // - goodSleep: 0 or 2,
         // - lessAlc: 0 or 1.
         const randomPoints = {
-          exercise: Math.floor(Math.random() * 15),
-          sportsTurn: Math.floor(Math.random() * 4),
-          trySport: Math.random() < 0.5 ? 1 : 0,
-          tryRecipe: Math.random() < 0.5 ? 1 : 0,
-          goodSleep: Math.random() < 0.5 ? 2 : 0,
-          lessAlc: Math.random() < 0.5 ? 1 : 0,
+          exercise: Math.floor(Math.random() * 50),
+          sportsTurn: Math.floor(Math.random() * 25),
+          trySport: Math.random() < 0.5 ? 3 : 0,
+          tryRecipe: Math.random() < 0.5 ? 5 : 0,
+          goodSleep: Math.random() < 0.5 ? 8 : 0,
+          meditate: Math.random() < 0.5 ? 5 : 0,
+          lessAlc: Math.random() < 0.5 ? 10 : 0,
         }
         randomPoints.total = Object.values(randomPoints).reduce((sum, num) => sum + num, 0)
         

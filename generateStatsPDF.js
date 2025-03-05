@@ -19,6 +19,8 @@ const guildLogos = {
   AS: path.join(__dirname, 'logos', 'as_logo.png'),
   Prodeko: path.join(__dirname, 'logos', 'prodeko_logo.png'),
   Athene: path.join(__dirname, 'logos', 'athene_logo.png'),
+  KY: path.join(__dirname, 'logos', 'ky_logo.png'),
+  TOKYO: path.join(__dirname, 'logos', 'tokyo_logo.png'),
 }
 
 async function getGuildStats() {
@@ -127,7 +129,7 @@ async function generateLandscapePdf() {
     if (guildLogos[gs.guild] && fs.existsSync(guildLogos[gs.guild])) {
       try {
         doc.image(guildLogos[gs.guild], colLogoX, y, { fit: [colLogoWidth, colLogoWidth], align: 'center' })
-      } catch (err) {
+      } catch (_err) {
         doc.text('No Logo', colLogoX, y, { height: colLogoWidth, align: 'center' })
       }
     } else {
@@ -159,18 +161,18 @@ async function generateLandscapePdf() {
     doc.moveDown(3.5)
 
     if ((i + 1) % 5 === 0 && (i + 1) < guildStatsArr.length) {
-      doc.addPage({ layout: 'landscape', size: 'A4', margin: 30 });
-      doc.fontSize(13).font('Helvetica-Bold');
-      const headerY = doc.y;
-      doc.text('Guild', colGuildX, headerY, { width: colGuildWidth, align: 'center' });
-      doc.text('Total', colTotalX, headerY, { width: colTotalWidth, align: 'center' });
-      doc.text('Participants', colParticipantsX, headerY, { width: colParticipantsWidth, align: 'center' });
-      doc.text('Avg', colAvgX, headerY, { width: colAvgWidth, align: 'center' });
-      doc.text('Top 5 Guild Members', colTopUsersX, headerY, { width: colTopUsersWidth, align: 'center' });
-      doc.text('Top 5 Teams', colTopTeamsX, headerY, { width: colTopTeamsWidth, align: 'center' });
-      doc.moveDown(0.5);
-      doc.moveTo(margin, doc.y).lineTo(842 - margin, doc.y).stroke();
-      doc.moveDown(0.5);
+      doc.addPage({ layout: 'landscape', size: 'A4', margin: 30 })
+      doc.fontSize(13).font('Helvetica-Bold')
+      const headerY = doc.y
+      doc.text('Guild', colGuildX, headerY, { width: colGuildWidth, align: 'center' })
+      doc.text('Total', colTotalX, headerY, { width: colTotalWidth, align: 'center' })
+      doc.text('Participants', colParticipantsX, headerY, { width: colParticipantsWidth, align: 'center' })
+      doc.text('Avg', colAvgX, headerY, { width: colAvgWidth, align: 'center' })
+      doc.text('Top 5 Guild Members', colTopUsersX, headerY, { width: colTopUsersWidth, align: 'center' })
+      doc.text('Top 5 Teams', colTopTeamsX, headerY, { width: colTopTeamsWidth, align: 'center' })
+      doc.moveDown(0.5)
+      doc.moveTo(margin, doc.y).lineTo(842 - margin, doc.y).stroke()
+      doc.moveDown(0.5)
     }
   }
 
