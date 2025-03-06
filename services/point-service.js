@@ -9,9 +9,6 @@ const addPoints = async (userId, pointsData) => {
     }
 
     const team = await Team.findById(user.team)
-    /*if (!team) {
-      throw new Error('Team not found')
-    }*/
 
     Object.keys(pointsData).forEach((key) => {
       user.points[key] += pointsData[key]
@@ -120,7 +117,7 @@ const getGuildsLeaderboards = async () => {
       }
     })
 
-    return resultsWithAverage;
+    return resultsWithAverage
   } catch (error) {
     console.error('Error occurred in getGuildsLeaderboards:', error)
     throw new Error('Error fetching guild average points')
@@ -132,7 +129,7 @@ const getGuildsTotals = async () => {
     const categories = User.validCategories
     const allGuilds = User.validGuilds
 
-    const guilds = {};
+    const guilds = {}
     allGuilds.forEach(guildName => {
       guilds[guildName] = { guild: guildName, participants: 0 }
       categories.forEach(category => {

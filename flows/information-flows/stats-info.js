@@ -9,7 +9,7 @@ statsInfoScene.enter(async (ctx) => {
     statsMessage += '/summary \\- Get your personal points summary\n\n'
     statsMessage += '/topguilds \\- See guild standings in the competition\n\n'
     statsMessage += '/topguildsall \\- Compare guild points in more detail\n\n'
-    statsMessage += '/topusers \\- See top 15 users in the competition\n\n'
+    statsMessage += '/topusers \\- See top 15 participants in the competition\n\n'
     statsMessage += 'Stay motivated and see how your efforts stack up against the competition\\!'
   
     await ctx.reply(statsMessage, { parse_mode: 'MarkdownV2' })

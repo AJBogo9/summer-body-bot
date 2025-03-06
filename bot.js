@@ -1,6 +1,5 @@
 const { Telegraf, Scenes, session } = require('telegraf')
-const { telegramToken } = require('./config')
-//const bot = new Telegraf(telegramToken)
+const { telegramToken, commands, responses, maxUsage } = require('./config')
 const https = require('https')
 
 const agent = new https.Agent({
@@ -22,6 +21,7 @@ const { registerWizard } = require('./flows/register')
 const { createTeamWizard } = require('./flows/create-team')
 const { joinTeamWizard } = require('./flows/join-team')
 const { weekScoresWizard } = require('./flows/week-scores')
+const { sportsActivityWizard } = require('./flows/exercise-scores')
 
 const { teamRankingsScene } = require('./flows/statistics-flows/team-rankings')
 const { teamMemberRankingsScene } = require('./flows/statistics-flows/team-member-rankings')
@@ -31,7 +31,6 @@ const { guildComparisonScene } = require('./flows/statistics-flows/guild-compari
 const { topUsersScene } = require('./flows/statistics-flows/top-users')
 
 const onlyPrivate = require('./utils/check-private')
-//const isCompetitionActive = require('./utils/is-comp-active')
 
 const texts = require('./utils/texts')
 
@@ -46,6 +45,7 @@ const stage = new Scenes.Stage([
                 createTeamWizard,
                 joinTeamWizard,
                 weekScoresWizard,
+                sportsActivityWizard,
                 teamRankingsScene,
                 teamMemberRankingsScene,
                 userSummaryScene,
@@ -54,14 +54,20 @@ const stage = new Scenes.Stage([
                 topUsersScene,
               ])
 
-bot.use(session()) //TODO: Change to use mongoDb session etc
+bot.use(session())
 bot.use(stage.middleware())
 
-// bot.on('message', (ctx) => {
-//   if (ctx.message.sticker) {
-//     console.log("sticker id", ctx.message.sticker.file_id)
-//   }
-// })
+const allowedCommands = ['start', 'register', 'jointeam', 'createteam', 'rmuser', 'team'];
+
+bot.use(async (ctx, next) => {
+  if (ctx.message && ctx.message.text && ctx.message.text.startsWith('/')) {
+    const command = ctx.message.text.split(' ')[0].substring(1).toLowerCase();
+    if (!allowedCommands.includes(command)) {
+      return ctx.reply('Competition hasn’t started yet, use /register to register to the competition.');
+    }
+  }
+  await next();
+});
 
 bot.command('help', (ctx) => { ctx.scene.enter('help_scene') })
 
@@ -75,6 +81,7 @@ bot.command('register', onlyPrivate, (ctx) => { ctx.scene.enter('register_wizard
 bot.command('createteam', onlyPrivate, (ctx) => { ctx.scene.enter('create_team_wizard') })
 bot.command('jointeam', onlyPrivate, (ctx) => { ctx.scene.enter('join_team_wizard') })
 bot.command('weekscores', onlyPrivate, (ctx) => { ctx.scene.enter('week_scores_wizard') })
+bot.command('addexercise', onlyPrivate, (ctx) => { ctx.scene.enter('sports_activity_wizard') })
 
 bot.command('leaderboards', (ctx) => { ctx.scene.enter('team_rankings_scene') })
 bot.command('team', (ctx) => { ctx.scene.enter('team_member_rankings_scene') })
@@ -83,8 +90,29 @@ bot.command('topguilds', (ctx) => { ctx.scene.enter('guild_standings_scene') })
 bot.command('topguildsall', (ctx) => { ctx.scene.enter('guild_comparison_scene') })
 bot.command('topusers', (ctx) => { ctx.scene.enter('top_users_scene') })
 
-//bot.command('dumbahhbot', (ctx) => { ctx.reply('yo mama')})
-//bot.command('yomama', (ctx) => { ctx.replyWithSticker('CAACAgQAAxkBAAIFJ2Xy4dBcnwPBbamQiGVerGcMziY-AAINAAPBHkwgKWSr0-m_FIE0BA') })
+const usedCommands = {}
+commands.forEach(cmd => {
+  usedCommands[cmd] = new Set()
+})
+
+commands.forEach(cmd => {
+  bot.command(cmd, async (ctx) => {
+    try {
+      await ctx.deleteMessage()
+    } catch (error) {
+      console.error("Failed to delete message:", error)
+    }
+    const userId = ctx.from.id
+    if (usedCommands[cmd].size >= maxUsage) {
+      return 
+    }
+    if (usedCommands[cmd].has(userId)) {
+      return
+    }
+    usedCommands[cmd].add(userId)
+    return ctx.replyWithSticker(responses[cmd])
+  })
+})
 
 bot.catch((err, ctx) => { 
   console.error(`Encountered an error for ${ctx.updateType}`, err) 

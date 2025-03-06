@@ -1,4 +1,5 @@
 const Team = require('../models/team-model')
+const User = require('../models/user-model')
 
 const createTeam = async (teamName, guild) => {
   try {
@@ -24,6 +25,10 @@ const deleteTeam = async (teamId) => {
 const joinTeam = async (userId, teamId) => {
   try {
     const team = await Team.findById(teamId)
+    const user = await User.findById(userId)
+    for (const key in user.points) {
+      team.points[key] = (team.points[key] || 0) + user.points[key]
+    }
     team.members.push(userId)
     await team.save()
   } catch (error) {
@@ -41,6 +46,11 @@ const leaveTeam = async (userId, teamId) => {
     if (memberIndex === -1) {
       console.error(`User with ID ${userId} is not a member of team ${teamId}`)
       throw new Error('User not in team')
+    }
+
+    const user = await User.findById(userId)
+    for (const key in user.points) {
+      team.points[key] = (team.points[key] || 0) - user.points[key]
     }
 
     team.members.splice(memberIndex, 1)

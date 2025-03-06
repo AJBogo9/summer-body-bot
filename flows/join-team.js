@@ -18,7 +18,9 @@ const joinTeamWizard = new Scenes.WizardScene(
       return ctx.scene.leave()
     }
 
-    if (user && user.team) {
+    const teamExists = await teamService.getTeamById(user.team)
+
+    if (user && user.team && teamExists) {
       await ctx.reply(
         'You are already part of a team. By joining a new team, you will automatically leave your current team. ' +
         'If your current team is left with no members, it will be permanently removed. ' +
@@ -31,7 +33,8 @@ const joinTeamWizard = new Scenes.WizardScene(
       return ctx.wizard.next()
     } else {
       ctx.wizard.state.confirmJoin = true
-      await ctx.reply('You are not part of a team. Please enter the ID of the team you wish to join or use buttons below.', cancelAndExitKeyboard)
+      const sentMessage = await ctx.reply('Please enter the ID of the team you wish to join. This ID was provided when the team was initially created.', cancelAndExitKeyboard)
+      ctx.wizard.state.questionMessageId = sentMessage.message_id
       return ctx.wizard.next()
     }
   },
@@ -49,37 +52,36 @@ const joinTeamWizard = new Scenes.WizardScene(
 
         try {
           const team = await teamService.getTeamById(teamId)
-
+          
           if (!team) {
-            await ctx.reply('No team found with the provided ID. Please check the ID and try again.', cancelAndExitKeyboard)
-            return ctx.wizard.selectStep(ctx.wizard.cursor)
-          }
-
-          if (user.guild !== team.guild) {
-            await ctx.reply('You cannot join a team that belongs to a different guild. Start over with /jointeam')
-            return ctx.scene.leave()
-          }
-
-          if (user.team) {
-            await teamService.leaveTeam(user._id, user.team)
+            await ctx.telegram.editMessageText(ctx.chat.id, ctx.wizard.state.questionMessageId, null, 'Please enter the ID of the team you wish to join.')
+            await ctx.reply('No team found with the provided ID. Please check the ID and try again.')
+            await ctx.scene.leave()
+            return ctx.scene.enter('join_team_wizard')
           }
 
           await userService.addUserToTeam(user._id, team._id)
           await teamService.joinTeam(user._id, team._id)
 
+          await ctx.telegram.editMessageText(ctx.chat.id, ctx.wizard.state.questionMessageId, null, 'Please enter the ID of the team you wish to join.')
           await ctx.reply(`Successfully joined team ${team.name}!`)
           return ctx.scene.leave()
-        } catch (error) {
-            await ctx.reply('Invalid team ID format. Start over with /jointeam')
-            return ctx.scene.leave()
+        } catch (_err) {
+          await ctx.telegram.editMessageText(ctx.chat.id, ctx.wizard.state.questionMessageId, null, 'Please enter the ID of the team you wish to join.')
+          await ctx.reply('Invalid team ID format. Start over with /jointeam.')
+          return ctx.scene.leave()
         }
       } else {
         await ctx.reply('Please enter the team ID.', cancelAndExitKeyboard)
         return ctx.wizard.selectStep(ctx.wizard.cursor)
       }
     } else {
+      if (ctx.updateType === 'message') {
+        await ctx.reply('Please use the provided buttons to select an activity.')
+        return
+      }
       ctx.reply(texts.actions.error.error)
-      return ctx.wizard.exit()
+      return ctx.scene.leave()
     }
   }
 )
@@ -87,17 +89,22 @@ const joinTeamWizard = new Scenes.WizardScene(
 joinTeamWizard.action('confirm_join_team', async (ctx) => {
   ctx.wizard.state.confirmJoin = true
   await ctx.answerCbQuery()
-  await ctx.editMessageText('Please enter the ID of the team you wish to join.',
+  const userId = ctx.from.id
+  const user = await userService.findUser(userId)
+  await teamService.leaveTeam(user._id, user.team)
+  await ctx.editMessageReplyMarkup({})
+  const sentMessage = await ctx.reply('Please enter the ID of the team you wish to join.',
     Markup.inlineKeyboard([
         Markup.button.callback('Cancel', 'cancel')
     ])
   )
+  ctx.wizard.state.questionMessageId = sentMessage.message_id
 })
 
 joinTeamWizard.action('cancel', async (ctx) => {
   ctx.wizard.state.confirmJoin = false
   await ctx.answerCbQuery()
-  await ctx.editMessageText('Joining team canceled.')
+  await ctx.editMessageText('Joining team canceled. Start again with /jointeam.')
   return ctx.scene.leave()
 })
 

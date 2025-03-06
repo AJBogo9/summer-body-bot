@@ -3,14 +3,24 @@ const { Scenes } = require('telegraf')
 const howToGetPoints = new Scenes.BaseScene('how_to_get_points_scene')
 howToGetPoints.enter(async (ctx) => {
   let pointsMessage = '*How to Earn Points* 🌟\n\n'
-  pointsMessage += 'You can add points once a week, on Sundays with command /weekscores\\. Here\'s how you can earn them:\n\n'
-  pointsMessage += '1\\. *Exercise*: Earn points by exercising\\. For every hour of exercise, you earn 1 point\\. If you exercise for 2 hours in one session, you earn 2 points, and so on\\.\n\n'
-  pointsMessage += '2\\. *Weekly Sports Session*: Earn point by attending a weekly sports sessions (for example, your guild\'s regular weekly session or a sports try-out/jogging session)\\.\n\n'
-  pointsMessage += '3\\. *New Sport*: Earn 1 point by trying a new sport or a sport you haven\'t done in a long time\\.\n\n'
-  pointsMessage += '4\\. *New Recipe*: Earn 1 point by trying a new recipe this week\\.\n\n'
-  pointsMessage += '5\\. *Sleep*: Earn 2 points by sleeping 7 or more hours at least 5 times this week\\.\n\n'
-  pointsMessage += '6\\. *Alcohol*: Earn 1 point by having less than 7 portions of alcohol this week\\.\n\n'
-
+  pointsMessage += 'You can log your Kilometer\\-based and Hour\\-based training at any time\\ with the command /addexercise, and all other activities once a week on Sundays using the command /weekscores\\. Here’s how you can earn them:\n\n'
+  pointsMessage += '1\\. *Kilometer\\-based Activities*:\n'
+  pointsMessage += '   \\- Running\\/Walking: 1 point per km\n'
+  pointsMessage += '   \\- Cycling: 0\\.25 points per km\n'
+  pointsMessage += '   \\- Swimming: 3 points per km\n'
+  pointsMessage += '   \\- Ice Skating: 0\\.25 points per km\n'
+  pointsMessage += '   \\- Skiing: 0\\.5 points per km\n\n'
+  pointsMessage += '2\\. *Hour\\-based Training*:\n'
+  pointsMessage += '   \\- Low Intensity: 2 point per hour\n'
+  pointsMessage += '   \\- Moderate Intensity: 4 points per hour\n'
+  pointsMessage += '   \\- Vigorous Intensity: 8 points per hour\n\n'
+  pointsMessage += '3\\. *Sports Sessions*: 5 points for participating in a sports session \\(for example, your guild\'s regular weekly session or a sports try\\-out / jogging session\\)\\.\n\n'
+  pointsMessage += '4\\. *New Sport*: 5 points for trying a new or long\\-unpracticed sport\\.\n\n'
+  pointsMessage += '5\\. *New Healthy Recipe*: 5 points for trying out a new healthy recipe this week\\.\n\n'
+  pointsMessage += '6\\. *Good Sleep*: 8 points for sleeping 7\\+ hours at least 5 nights in a week\\.\n\n'
+  pointsMessage += '7\\. *Meditation*: 5 points for meditating at least 10 minutes on 5 days during the past week\\.\n\n'
+  pointsMessage += '8\\. *Less Alcohol*: 10 points for consuming at most 5 portions of alcohol during the week\\.\n\n'
+  
   await ctx.reply(pointsMessage, { parse_mode: 'MarkdownV2' })
   await ctx.scene.leave()
 })

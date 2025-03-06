@@ -16,8 +16,8 @@ guildStandingsScene.enter(async (ctx) => {
 
     let message = '*Standings \\(by average points\\)* 🏆\n\n'
 
-    const guildPadding = 10
-    const pointPadding = 15
+    const guildPadding = 15
+    const pointPadding = 6
 
     // const isTie = averages[0].average === averages[1].average
     const emojis = ['🥇', '🥈', '🥉', ' ⒋ ', ' ⒌ ', ' ⒍ ', ' ⒎ ', ' ⒏ ', ' ⒐ ', ' ⒑ ', ' ⒒ ', ' ⒓ ', ' ⒔ ', ' ⒕ ', ' ⒖ ', ' ⒗ ', ' ⒘ ', ' ⒙ ', ' ⒚ ', ' ⒛ ']

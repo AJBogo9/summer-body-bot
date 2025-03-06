@@ -12,7 +12,7 @@ const teamSchema = new mongoose.Schema({
   }],
   guild: {
     type: String, 
-    enum: ['TiK', 'DG', 'FK', 'PT', 'AS', 'SIK', 'KIK', 'MK', 'IK', 'Athene', 'Prodeko', 'Inkubio'], 
+    enum: ['TiK', 'DG', 'FK', 'PT', 'AS', 'SIK', 'KIK', 'MK', 'IK', 'Athene', 'Prodeko', 'Inkubio', 'KY', 'TOKYO', 'TF'], 
     required: true 
   },
   points: {
@@ -21,6 +21,7 @@ const teamSchema = new mongoose.Schema({
     trySport: { type: Number, default: 0 },
     tryRecipe: { type: Number, default: 0 },
     goodSleep: { type: Number, default: 0 },
+    meditate: { type: Number, default: 0 },
     lessAlc: { type: Number, default: 0 },
     total: { type: Number, default: 0 },
   },

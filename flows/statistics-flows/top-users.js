@@ -1,4 +1,3 @@
-// flows/statistics-flows/top-users.js
 const { Scenes } = require('telegraf')
 const User = require('../../models/user-model')
 const { formatList } = require('../../utils/format-list')

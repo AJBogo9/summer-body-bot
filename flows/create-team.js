@@ -15,12 +15,14 @@ const createTeamWizard = new Scenes.WizardScene(
     const user = await userService.findUser(userId)
 
     if (!user) {
-        await ctx.reply('User not found. Please /register first.')
-        return ctx.scene.leave()
+      await ctx.reply('User not found. Please /register first.')
+      return ctx.scene.leave()
     }
 
-    if (user && user.team) {
-      await ctx.reply(
+    const teamExists = await teamService.getTeamById(user.team)
+    
+    if (user && user.team && teamExists) {
+      const sentMessage = await ctx.reply(
         'You are currently part of a team. By creating a new team, you will automatically leave your current team. ' +
         'If your current team is left with no members, it will be permanently removed. ' +
         'Do you wish to continue?',
@@ -29,29 +31,32 @@ const createTeamWizard = new Scenes.WizardScene(
           Markup.button.callback('No, cancel', 'cancel_create_team')
         ])
       )
+      ctx.wizard.state.questionMessageId = sentMessage.message_id
       return ctx.wizard.next()
     } else {
-      await ctx.reply('You are not currently part of any team. Please provide a name for your new team.', cancelAndExitKeyboard)
+      const sentMessage = await ctx.reply('Please provide a name for your new team.', cancelAndExitKeyboard)
+      ctx.wizard.state.questionMessageId = sentMessage.message_id
       ctx.wizard.state.confirmCreate = true
       return ctx.wizard.next()
     }
   },
   async (ctx) => {
-    if (ctx.wizard.state.confirmCreate) {            
+    if (ctx.wizard.state.confirmCreate) { 
       const teamName = ctx.message.text
       const userId = ctx.from.id
       const user = await userService.findUser(userId)
       const validation = validateTeamName(teamName)
 
       if (!validation.isValid) {
-        await ctx.reply(validation.reason, cancelAndExitKeyboard)
+        await ctx.telegram.editMessageText(ctx.chat.id, ctx.wizard.state.questionMessageId, null, 'Please provide a name for your new team.')
+        const sentMessage = await ctx.reply(validation.reason, cancelAndExitKeyboard)
+        ctx.wizard.state.questionMessageId = sentMessage.message_id
         return ctx.wizard.selectStep(ctx.wizard.cursor)
       }
 
       try {
+        await ctx.telegram.editMessageText(ctx.chat.id, ctx.wizard.state.questionMessageId, null, 'Please provide a name for your new team.')
         const team = await teamService.createTeam(teamName, user.guild)
-
-        user.team && await teamService.leaveTeam(user._id, user.team)
         await userService.addUserToTeam(user._id, team._id)
         await teamService.joinTeam(user._id, team._id)
 
@@ -61,15 +66,17 @@ const createTeamWizard = new Scenes.WizardScene(
       } catch (error) {
 
         if (error.code === 11000) {
-          await ctx.reply('A team with that name already exists. Please try a different name.', cancelAndExitKeyboard)
-          return ctx.wizard.selectStep(ctx.wizard.cursor)
+          await ctx.reply('A team with that name already exists. Please try a different name.')
+          await ctx.scene.leave()
+          return ctx.scene.enter('create_team_wizard')
         } else {
           await ctx.reply(texts.actions.error.error)
           return ctx.scene.leave()
         }
       }
     } else {
-      await ctx.reply('Team creation canceled.')
+      await ctx.telegram.editMessageText(ctx.chat.id, ctx.wizard.state.questionMessageId, null, 'Please provide a name for your new team.')
+      await ctx.reply('Team creation canceled. Start again with /createteam.')
       return ctx.scene.leave()
     }
   }
@@ -77,16 +84,19 @@ const createTeamWizard = new Scenes.WizardScene(
 
 createTeamWizard.action('confirm_create_team', async (ctx) => {
   ctx.wizard.state.confirmCreate = true
-
+  const userId = ctx.from.id
+  const user = await userService.findUser(userId)
+  await teamService.leaveTeam(user._id, user.team)
   await ctx.answerCbQuery()
-  await ctx.editMessageText('Please provide a name for your new team.', cancelAndExitKeyboard)
+  const sentMessage = await ctx.editMessageText('Please provide a name for your new team.', cancelAndExitKeyboard)
+  ctx.wizard.state.questionMessageId = sentMessage.message_id
 })
 
 createTeamWizard.action('cancel_create_team', async (ctx) => {
   ctx.wizard.state.confirmCreate = false
 
   await ctx.answerCbQuery()
-  await ctx.editMessageText('Team creation canceled.')
+  await ctx.editMessageText('Team creation canceled. Start again with /createteam.')
   return ctx.scene.leave()
 })
 

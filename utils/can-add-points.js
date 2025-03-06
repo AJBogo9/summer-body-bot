@@ -19,7 +19,7 @@ const canAddPoints = async (lastSubmission) => {
   if (lastSubmissionStr === todayStr) {
     return {
       canAdd: false,
-      reason: 'You have already submitted your points for this week. If you think this is a mistake, contact @EppuRuotsalainen or @arttukaup'
+      reason: 'You have already submitted your points for this week. If you think this is a mistake or submitted your points incorrectly, contact @EppuRuotsalainen.'
     }
   }
 

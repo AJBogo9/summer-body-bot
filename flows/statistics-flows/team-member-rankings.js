@@ -1,6 +1,7 @@
 const { Scenes } = require('telegraf')
 const pointService = require('../../services/point-service')
 const userService = require('../../services/user-service')
+const teamService = require('../../services/team-service')
 const texts = require('../../utils/texts')
 const { formatList, escapeMarkdownV2 } = require('../../utils/format-list')
 
@@ -10,19 +11,20 @@ teamMemberRankingsScene.enter(async (ctx) => {
   try {
     const userId = ctx.from.id
     const user = await userService.findUser(userId)
+    const teamExists = await teamService.getTeamById(user.team)
     if (!user) {
       await ctx.reply("User not found. Please register first using /register.")
       return ctx.scene.leave()
     }
-    if (!user.team) {
+    if (!user.team || !teamExists) {
       await ctx.reply("You are not a part of any team. Please join or create a team first.")
       return ctx.scene.leave()
     }
 
     const rankings = await pointService.getTeamMemberRankings(userId)
     let message = `*${escapeMarkdownV2(rankings[0].teamName)} Rankings* 🏅\n\n`
-    const titlePadding = 20
-    const valuePadding = 6
+    const titlePadding = 25
+    const valuePadding = 8
 
     rankings.forEach((member, index) => {
       const rank = (index + 1).toString() + '.'
