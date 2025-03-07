@@ -57,16 +57,26 @@ const stage = new Scenes.Stage([
 bot.use(session())
 bot.use(stage.middleware())
 
-const allowedCommands = ['start', 'register', 'jointeam', 'createteam', 'rmuser', 'team', 'terms'];
+const allowedCommands = ['start', 'register', 'jointeam', 'createteam', 'rmuser', 'team', 'terms']
 
 bot.use(async (ctx, next) => {
   if (ctx.message && ctx.message.text && ctx.message.text.startsWith('/')) {
-    const command = ctx.message.text.split(' ')[0].substring(1).toLowerCase();
+    const fullCommand = ctx.message.text.split(' ')[0].substring(1).toLowerCase()
+    const command = fullCommand.split('@')[0]
     if (!allowedCommands.includes(command)) {
-      return ctx.reply('Competition hasn’t started yet, use /register to register to the competition.');
+      if (ctx.chat && ctx.chat.type !== 'private') {
+        try {
+          await ctx.deleteMessage()
+        } catch (error) {
+          console.error('Error deleting message:', error)
+        }
+        return;
+      } else {
+        return ctx.reply('Competition hasn’t started yet, use /register to register to the competition.')
+      }
     }
   }
-  await next();
+  await next()
 });
 
 bot.command('help', (ctx) => { ctx.scene.enter('help_scene') })
