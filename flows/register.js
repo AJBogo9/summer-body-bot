@@ -34,7 +34,28 @@ registerWizard.action('accept_terms', async (ctx) => {
   const guildButtons = validGuilds.map(g => Markup.button.callback(g, `select_guild_${g}`))
   const guildRows = []
   for (let i = 0; i < guildButtons.length; i += 3) {
-    guildRows.push(guildButtons.slice(i, i + 3))
+    guildRows.push(guildButtons.slice(i, i + 3));
+  }
+  if (guildRows.length > 1 && guildRows[guildRows.length - 1].length < 3) {
+    const lastRow = guildRows.pop();
+    const prevRow = guildRows.pop();
+    const combined = prevRow.concat(lastRow);
+    if (combined.length <= 5) {
+      guildRows.push(combined);
+    } else {
+      const total = combined.length;
+      let splitIndex = Math.floor(total / 2);
+      if (splitIndex < 3) {
+        splitIndex = 3;
+      }
+      if (total - splitIndex < 3) {
+        splitIndex = total - 3;
+      }
+      const firstPart = combined.slice(0, splitIndex);
+      const secondPart = combined.slice(splitIndex);
+      guildRows.push(firstPart);
+      guildRows.push(secondPart);
+    }
   }
   guildRows.push([Markup.button.callback('Cancel & Exit', 'exit_wizard')])
   await ctx.reply(
