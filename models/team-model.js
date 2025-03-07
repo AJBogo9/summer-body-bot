@@ -12,7 +12,7 @@ const teamSchema = new mongoose.Schema({
   }],
   guild: {
     type: String, 
-    enum: ['TiK', 'DG', 'FK', 'PT', 'AS', 'SIK', 'KIK', 'MK', 'IK', 'Athene', 'Prodeko', 'Inkubio', 'KY', 'TOKYO', 'TF'], 
+    enum: ['TiK', 'DG', 'FK', 'PT', 'AS', 'SIK', 'KIK', 'MK', 'IK', 'Athene', 'Prodeko', 'Inkubio', 'KY', 'TOKYO', 'AK', 'TF'], 
     required: true 
   },
   points: {
