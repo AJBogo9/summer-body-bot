@@ -11,11 +11,11 @@ teamMemberRankingsScene.enter(async (ctx) => {
   try {
     const userId = ctx.from.id
     const user = await userService.findUser(userId)
-    const teamExists = await teamService.getTeamById(user.team)
     if (!user) {
       await ctx.reply("User not found. Please register first using /register.")
       return ctx.scene.leave()
     }
+    const teamExists = await teamService.getTeamById(user.team)
     if (!user.team || !teamExists) {
       await ctx.reply("You are not a part of any team. Please join or create a team first.")
       return ctx.scene.leave()
