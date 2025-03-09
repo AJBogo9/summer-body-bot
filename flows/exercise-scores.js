@@ -3,18 +3,18 @@ const pointService = require('../services/point-service')
 const userService = require('../services/user-service')
 
 const kmActivities = [
-  { key: 'running', label: 'running/walking', type: 'km', multiplier: 1 },
-  { key: 'cycling', label: 'cycling', type: 'km', multiplier: 0.25 },
-  { key: 'swimming', label: 'swimming', type: 'km', multiplier: 3 },
-  { key: 'ice_skating', label: 'ice skating', type: 'km', multiplier: 0.25 },
-  { key: 'skiing', label: 'skiing', type: 'km', multiplier: 0.5 },
-]
+  { key: 'running', label: 'running/walking', type: 'km', multiplier: 1, maxAllowed: 40 },
+  { key: 'cycling', label: 'cycling', type: 'km', multiplier: 0.25, maxAllowed: 100 },
+  { key: 'swimming', label: 'swimming', type: 'km', multiplier: 4, maxAllowed: 10 },
+  { key: 'ice_skating', label: 'ice skating', type: 'km', multiplier: 0.25, maxAllowed: 50 },
+  { key: 'skiing', label: 'skiing', type: 'km', multiplier: 0.5, maxAllowed: 50 },
+];
 
 const otherActivities = [
-  { key: 'low', label: 'low intensity training', type: 'hours', multiplier: 2 },
-  { key: 'moderate', label: 'moderate intensity training', type: 'hours', multiplier: 4 },
-  { key: 'vigorous', label: 'vigorous intensity training', type: 'hours', multiplier: 8 },
-]
+  { key: 'low', label: 'low intensity training', type: 'hours', multiplier: 2, maxAllowed: 6 },
+  { key: 'moderate', label: 'moderate intensity training', type: 'hours', multiplier: 4, maxAllowed: 5 },
+  { key: 'vigorous', label: 'vigorous intensity training', type: 'hours', multiplier: 8, maxAllowed: 4 },
+];
 
 const sportsActivityWizard = new Scenes.WizardScene(
   'sports_activity_wizard',
@@ -28,7 +28,7 @@ const sportsActivityWizard = new Scenes.WizardScene(
       'What type of exercise did you do this week?',
       Markup.inlineKeyboard([
         [Markup.button.callback('Kilometre‑based', 'type_km')],
-        [Markup.button.callback('Other (e.g. football, gym, tennis, yoga)', 'type_other')],
+        [Markup.button.callback('Hour-based', 'type_other')],
         [Markup.button.callback('Cancel & Exit', 'exit_wizard')]
       ])
     )
@@ -47,7 +47,7 @@ const sportsActivityWizard = new Scenes.WizardScene(
     const prompt = exerciseType === 'km' 
       ? 'Which activity did you complete?' 
       : 'Which intensity did you perform?'
-    const keyboard = activities.map(act => [Markup.button.callback(act.label, `select_${exerciseType}_${act.key}`)])
+    const keyboard = activities.map(act => [Markup.button.callback(act.label.charAt(0).toUpperCase() + act.label.slice(1), `select_${exerciseType}_${act.key}`)])
     keyboard.push([Markup.button.callback('Cancel & Exit', 'exit_wizard')])
     await ctx.reply(prompt, Markup.inlineKeyboard(keyboard))
     await ctx.answerCbQuery()
@@ -98,12 +98,12 @@ const sportsActivityWizard = new Scenes.WizardScene(
       duration = value / 60
       unitLabel = 'minutes'
     }
-    if (unitLabel === 'kilometres' && duration > 100) {
-      await ctx.reply(`Woah, ${activity.label} for ${value} ${unitLabel}? Send a DM to @EppuRuotsalainen to get your points.`)
+    if (unitLabel === 'kilometres' && duration >= activity.maxAllowed && activity.maxAllowed !== undefined) {
+      await ctx.reply(`Woah, ${activity.label} for ${value} ${unitLabel}? Send a DM to @EppuRuotsalainen to get your points or start again with /addexercise.`)
       return ctx.scene.leave()
     }
-    if (unitLabel === 'minutes' && duration > 10) {
-      await ctx.reply(`Woah, ${value} ${unitLabel} of ${activity.label}? Send a DM to @EppuRuotsalainen to get your points.`)
+    if (unitLabel === 'minutes' && duration >= activity.maxAllowed && activity.maxAllowed !== undefined) {
+      await ctx.reply(`Woah, ${value} ${unitLabel} of ${activity.label}? Send a DM to @EppuRuotsalainen to get your points or start again with /addexercise.`)
       return ctx.scene.leave()
     }
     const pointsEarned = duration * activity.multiplier
@@ -152,7 +152,7 @@ sportsActivityWizard.action(/^select_(km|other)_(.+)$/, async (ctx) => {
   }
   ctx.wizard.state.selectedActivity = activity
   await ctx.editMessageReplyMarkup({})
-  await ctx.answerCbQuery(`Selected: ${activity.label}`)
+  await ctx.answerCbQuery()
   return ctx.wizard.steps[ctx.wizard.cursor](ctx)
 })
 

@@ -17,10 +17,11 @@ topUsersScene.enter(async (ctx) => {
     const titlePadding = 25
     const valuePadding = 8
     
+    const emojis = ['⒈ ', '⒉ ', '⒊ ', '⒋ ', '⒌ ', '⒍ ', '⒎ ', '⒏ ', '⒐ ', '⒑ ', '⒒ ', '⒓ ', '⒔ ', '⒕ ', '⒖ ', '⒗ ', '⒘ ', '⒙ ', '⒚ ', '⒛ ']
+
     users.forEach((user, index) => {
-      const rank = (index + 1).toString() + '.'
-      const spaces = (index + 1) < 10 ? '  ' : ' '
-      message += formatList(rank + spaces + user.name, user.points.total, titlePadding, valuePadding) + '\n'
+      const emoji = index < emojis.length ? emojis[index] : `${index + 1}`
+      message += emoji + formatList(user.name, user.points.total, titlePadding, valuePadding) + '\n'
     })
     
     await ctx.reply(message, { parse_mode: 'MarkdownV2' })

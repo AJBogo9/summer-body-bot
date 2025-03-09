@@ -11,7 +11,6 @@ const startWizard = new Scenes.WizardScene(
     let instructionsMessage = '*Getting Started:*\n\n'
     instructionsMessage += '1\\. *Register*: Begin by registering with the command /register\\.\n\n'
     instructionsMessage += '2\\. *Team Participation*: You may choose to team up with other fellow students, but participation as an individual is also welcome\\. If you decide to form or join a team, use the /createteam or /jointeam commands\\.\n\n'
-    instructionsMessage += '\\-\\-\\- _The commands below open on 10\\.3\\. when the competition starts_ \\-\\-\\-\n\n'
     instructionsMessage += '3\\. *Earning Points & Tracking Progress*: Use /howtogetpoints to learn how to get points\\. Amp up the excitement by checking rankings and stats — learn more with command /statsinfo\\.\n\n'
     instructionsMessage += '4\\. *Assistance*: Need help\\? The /help command lists all available commands and their functions\\.\n\n'
     await ctx.reply(instructionsMessage, { parse_mode: 'MarkdownV2' })

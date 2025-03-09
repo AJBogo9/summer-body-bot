@@ -12,7 +12,7 @@ const addPoints = async (userId, pointsData) => {
 
     Object.keys(pointsData).forEach((key) => {
       user.points[key] += pointsData[key]
-      user.lastSubmission = new Date()
+      if (key.toString() === 'sportsTurn') { user.lastSubmission = new Date() }
     })
 
     await user.save()
@@ -33,32 +33,38 @@ const addPoints = async (userId, pointsData) => {
 
 const getTeamRankings = async () => {
   try {
-    const teams = await Team.find()
+    const rankings = await User.aggregate([
+      { $match: { "points.total": { $gt: 0 }, team: { $ne: null } } },
+      { $group: {
+          _id: "$team",
+          totalPoints: { $sum: "$points.total" },
+          count: { $sum: 1 },
+          averagePoints: { $avg: "$points.total" }
+      }},
+      { $match: { count: { $gt: 3 } } },
+      { $lookup: {
+          from: "teams",
+          localField: "_id",
+          foreignField: "_id",
+          as: "teamInfo"
+      }},
+      { $unwind: "$teamInfo" },
+      { $project: {
+          _id: 0,
+          name: "$teamInfo.name",
+          totalPoints: 1,
+          averagePointsPerMember: { $round: ["$averagePoints", 1] }
+      }},
+      { $sort: { averagePointsPerMember: -1 } },
+      { $limit: 15 }
+    ]);
 
-    const teamsWithAverages = await Promise.all(teams.map(async (team) => {
-      const teamMembersCount = await User.countDocuments({ team: team._id })
-      const averagePointsPerMember = teamMembersCount > 0 ? team.points.total / teamMembersCount : 0
-
-      return {
-        _id: team._id,
-        name: team.name,
-        totalPoints: team.points.total,
-        averagePointsPerMember,
-      }
-    }))
-
-    const sortedTeams = teamsWithAverages.sort((a, b) => b.averagePointsPerMember - a.averagePointsPerMember).slice(0, 30)
-
-    return sortedTeams.map(team => ({
-      name: team.name,
-      totalPoints: team.totalPoints,
-      averagePointsPerMember: team.averagePointsPerMember.toFixed(1)
-    }))
+    return rankings;
   } catch (error) {
-    console.error('Error occurred in getTeamRankings:', error)
-    throw new Error('Error fetching team rankings')
+    console.error('Error occurred in getTeamRankings:', error);
+    throw new Error('Error fetching team rankings');
   }
-}
+};
 
 const getTeamMemberRankings = async (userId) => {
   try {
@@ -101,13 +107,15 @@ const getUserSummary = async (userId) => {
 
 const getGuildsLeaderboards = async () => {
   try {
-    const guildAggregation = await User.aggregate([{
-        $group: {
+    const guildAggregation = await User.aggregate([
+      { $match: { "points.total": { $gt: 0 } } },
+      { $group: {
           _id: "$guild",
           totalPoints: { $sum: "$points.total" },
           count: { $sum: 1 }
         }
-      }])
+      }
+    ])
 
     const resultsWithAverage = guildAggregation.map(item => {
       const averagePoints = item.count > 0 ? (item.totalPoints / item.count).toFixed(1) : 0
@@ -137,7 +145,7 @@ const getGuildsTotals = async () => {
       })
     })
 
-    const users = await User.find({})
+    const users = await User.find({ "points.total": { $gt: 0 } })
     users.forEach(user => {
       if (guilds[user.guild]) {
         guilds[user.guild].participants += 1

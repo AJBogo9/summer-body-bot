@@ -16,11 +16,12 @@ teamRankingsScene.enter(async (ctx) => {
     const titlePadding = 25
     const valuePadding = 8
 
+    const emojis = ['🥇', '🥈', '🥉', ' ⒋ ', ' ⒌ ', ' ⒍ ', ' ⒎ ', ' ⒏ ', ' ⒐ ', ' ⒑ ', ' ⒒ ', ' ⒓ ', ' ⒔ ', ' ⒕ ', ' ⒖ ', ' ⒗ ', ' ⒘ ', ' ⒙ ', ' ⒚ ', ' ⒛ ']
+
     rankings.forEach((team, index) => {
-      const rank = (index + 1).toString() + '.'
-      const spaces = (index + 1) < 10 ? '  ' : ' '
+      const emoji = index < emojis.length ? emojis[index] : `${index + 1}`
       const points = team.averagePointsPerMember.toString()
-      message += formatList(rank + spaces + team.name, points, titlePadding, valuePadding) + '\n'
+      message += emoji + formatList(team.name, points, titlePadding, valuePadding) + '\n'
     })
 
     await ctx.reply(message, { parse_mode: 'MarkdownV2' })

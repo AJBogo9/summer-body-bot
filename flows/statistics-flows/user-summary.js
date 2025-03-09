@@ -24,8 +24,8 @@ userSummaryScene.enter(async (ctx) => {
     message += `*Total of* ${escapeMarkdownV2(summary.total)} pts \n\n`
 
     message += formatList('Exercise', summary.exercise, titlePadding, valuePadding, 'pts') + '\n'
+    message += formatList('Sports Session', summary.sportsTurn, titlePadding, valuePadding, 'pts') + '\n'
     message += formatList('Try Sport', summary.trySport, titlePadding, valuePadding, 'pts') + '\n'
-    message += formatList('Sports Turn', summary.sportsTurn, titlePadding, valuePadding, 'pts') + '\n'
     message += formatList('Try Recipe', summary.tryRecipe, titlePadding, valuePadding, 'pts') + '\n'
     message += formatList('Good Sleep', summary.goodSleep, titlePadding, valuePadding, 'pts') + '\n'
     message += formatList('Meditation', summary.meditate, titlePadding, valuePadding, 'pts') + '\n'
