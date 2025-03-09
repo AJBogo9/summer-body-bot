@@ -8,8 +8,8 @@ const canAddPoints = require('../utils/can-add-points')
 const { formatList } = require('../utils/format-list')
 
 const PointMultipliers = {
-  sportsTurn: 5,
-  trySport: 5, 
+  sportsTurn: 10, // SporttiAppro theme week --> 2 * 5 points
+  trySport: 10, // SporttiAppro theme week --> 2 * 5 points
   tryRecipe: 5,  
   goodSleep: 8, 
   meditate: 5,

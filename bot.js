@@ -57,7 +57,7 @@ const stage = new Scenes.Stage([
 bot.use(session())
 bot.use(stage.middleware())
 
-const allowedCommands = ['start', 'register', 'jointeam', 'createteam', 'rmuser', 'team', 'terms']
+/*const allowedCommands = ['start', 'register', 'jointeam', 'createteam', 'rmuser', 'team', 'terms']
 
 bot.use(async (ctx, next) => {
   if (ctx.message && ctx.message.text && ctx.message.text.startsWith('/')) {
@@ -77,7 +77,7 @@ bot.use(async (ctx, next) => {
     }
   }
   await next()
-});
+});*/
 
 bot.command('help', (ctx) => { ctx.scene.enter('help_scene') })
 
