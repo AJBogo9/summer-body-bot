@@ -9,7 +9,7 @@ teamRankingsScene.enter(async (ctx) => {
   try {
     const rankings = await pointService.getTeamRankings()
     if (!rankings || rankings.length === 0) {
-      await ctx.reply("No team rankings available.")
+      await ctx.reply("There are no teams with three or more members where all members have more than 0 points.")
       return ctx.scene.leave()
     }
     let message = '*Team Rankings \\(by average points\\)* ⚡\n\n'
