@@ -41,7 +41,7 @@ const getTeamRankings = async () => {
           count: { $sum: 1 },
           averagePoints: { $avg: "$points.total" }
       }},
-      { $match: { count: { $gt: 3 } } },
+      { $match: { count: { $gte: 3 } } },
       { $lookup: {
           from: "teams",
           localField: "_id",
