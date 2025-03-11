@@ -108,13 +108,31 @@ const getUserSummary = async (userId) => {
 const getGuildsLeaderboards = async () => {
   try {
     const guildAggregation = await User.aggregate([
-      { $match: { "points.total": { $gt: 0 } } },
-      { $group: {
+      {
+        $match: {
+          "points.total": {
+            $gt: 0,
+          },
+        },
+      },
+      {
+        $group: {
           _id: "$guild",
-          totalPoints: { $sum: "$points.total" },
-          count: { $sum: 1 }
-        }
-      }
+          totalPoints: {
+            $sum: "$points.total",
+          },
+          count: {
+            $sum: 1,
+          },
+        },
+      },
+      {
+        $match: {
+          count: {
+            $gte: 3,
+          },
+        },
+      },
     ])
 
     const resultsWithAverage = guildAggregation.map(item => {
