@@ -13,8 +13,8 @@ teamRankingsScene.enter(async (ctx) => {
       return ctx.scene.leave()
     }
     let message = '*Team Rankings \\(by average points\\)* ⚡\n\n'
-    const titlePadding = 25
-    const valuePadding = 8
+    const titlePadding = 21
+    const valuePadding = 6
 
     const emojis = ['🥇', '🥈', '🥉', ' ⒋ ', ' ⒌ ', ' ⒍ ', ' ⒎ ', ' ⒏ ', ' ⒐ ', ' ⒑ ', ' ⒒ ', ' ⒓ ', ' ⒔ ', ' ⒕ ', ' ⒖ ', ' ⒗ ', ' ⒘ ', ' ⒙ ', ' ⒚ ', ' ⒛ ']
 
