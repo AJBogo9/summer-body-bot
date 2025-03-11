@@ -6,6 +6,7 @@ const kmActivities = [
   { key: 'running', label: 'running/walking', type: 'km', multiplier: 1, maxAllowed: 40 },
   { key: 'cycling', label: 'cycling', type: 'km', multiplier: 0.25, maxAllowed: 100 },
   { key: 'swimming', label: 'swimming', type: 'km', multiplier: 4, maxAllowed: 10 },
+  { key: 'rowing', label: 'rowing', type: 'km', multiplier: 1.5, maxAllowed: 15 },
   { key: 'ice_skating', label: 'ice skating', type: 'km', multiplier: 0.25, maxAllowed: 50 },
   { key: 'skiing', label: 'skiing', type: 'km', multiplier: 0.5, maxAllowed: 50 },
 ];
