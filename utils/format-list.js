@@ -1,6 +1,6 @@
 const formatNumber = (num) => {
     const fixed = num.toFixed(1)
-    return fixed.endsWith('.0') ? parseInt(num).toString() : fixed
+    return fixed.endsWith('.0') ? Math.round(num).toString() : fixed
 }
 
 const formatList = (title, text, titlePadding, valuePadding, unit = '') => {
