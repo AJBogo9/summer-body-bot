@@ -49,9 +49,10 @@ async function getGuildStats() {
 
   for (const guild in guildStats) {
     const stats = guildStats[guild]
+    stats.totalPoints = parseFloat(stats.totalPoints.toFixed(1))
     stats.average = stats.participants > 0
       ? (stats.totalPoints / stats.participants).toFixed(1)
-      : "0"
+      : 0
   }
   return Object.values(guildStats)
 }
@@ -196,7 +197,8 @@ async function generateLandscapePdf() {
   //doc.fontSize(12).text(`Generated on: ${new Date().toDateString()}`, { align: 'center' })
   doc.moveDown(1)
 
-  const guildStatsArr = await getGuildStats()
+  let guildStatsArr = await getGuildStats()
+  guildStatsArr = guildStatsArr.filter(gs => parseFloat(gs.totalPoints) > 0)
   guildStatsArr.sort((a, b) => parseFloat(b.average) - parseFloat(a.average))
   const overallTotalPoints = guildStatsArr.reduce((sum, gs) => sum + gs.totalPoints, 0)
 
@@ -422,7 +424,7 @@ async function generateLandscapePdf() {
 
   doc.addPage({ layout: 'landscape', size: 'A4', margin: 30 })
 
-  const svgString = fs.readFileSync('combinedGuildAverages.svg', 'utf8')
+  const svgString = fs.readFileSync('combinedGuildTotalPoints.svg', 'utf8')
 
   SVGtoPDF(doc, svgString, 30, 30, { width: 1042, height: 745 })
 
