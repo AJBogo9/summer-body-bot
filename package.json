@@ -38,7 +38,9 @@
     "node-schedule": "^2.1.1",
     "telegraf": "^4.16.2",
     "telegraf-session-local": "^2.1.1",
-    "pdfkit": "^0.16.0"
+    "pdfkit": "^0.16.0",
+    "svg-to-pdfkit": "^0.1.8",
+    "d3-node": "^4.0.1"
   },
   "devDependencies": {
     "jest": "^29.7.0"
