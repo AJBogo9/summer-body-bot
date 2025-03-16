@@ -300,7 +300,7 @@ async function generateLandscapePdf() {
 
   headerY = doc.y
   doc.fontSize(11).font('Helvetica-Bold')
-  doc.text(`Overall Total Points across all guilds: ${overallTotalPoints}`, colGuildX, headerY, { align: 'left' })
+  doc.text(`Overall Total Points across all guilds: ${overallTotalPoints.toFixed(1)}`, colGuildX, headerY, { align: 'left' })
 
   // --- Section 2: Top Users ---
   doc.addPage({ layout: 'landscape', size: 'A4', margin: 30 })

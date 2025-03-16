@@ -168,15 +168,15 @@
           .attr("y", margin.top / 2)
           .attr("text-anchor", "middle")
           .style("font-size", "16px")
-          .text("Daily Average Points Progression for All Guilds (Last 7 Days)");
+          .text("Daily Average Points for Top 10 Guilds (Last 7 Days)");
 
         const svgString = d3n.svgString();
         fs.writeFileSync("combinedGuildAverages.svg", svgString);
         console.log("Combined guild average chart with legend saved as combinedGuildAverages.svg");
     }
+
     async function generateCombinedGuildTotalPointsChart(data) {
       const outerWidth = 1042, outerHeight = 745;
-
       const margin = { top: 30, right: 30, bottom: 30, left: 30 };
       const availableWidth = outerWidth - margin.left - margin.right;
       const chartWidth = Math.floor(availableWidth * 0.90);
@@ -221,13 +221,18 @@
           d.totalPoints = +d.totalPoints;
         });
         guildDataMap[guild].sort((a, b) => a.date - b.date);
+        let cumulative = 0;
+        guildDataMap[guild].forEach(d => {
+          cumulative += d.totalPoints;
+          d.cumulativePoints = cumulative;
+        });
       }
-
-      let allDates = [], allTotalPoints = [];
+    
+      let allDates = [], allCumulativePoints = [];
       Object.values(guildDataMap).forEach(arr => {
         arr.forEach(d => {
           allDates.push(d.date);
-          allTotalPoints.push(d.totalPoints);
+          allCumulativePoints.push(d.cumulativePoints);
         });
       });
 
@@ -236,7 +241,7 @@
         .range([0, chartWidth]);
 
       const y = d3.scaleLinear()
-        .domain([0, d3.max(allTotalPoints)])
+        .domain([0, d3.max(allCumulativePoints)])
         .nice()
         .range([height, 0]);
 
@@ -257,8 +262,8 @@
 
       const line = d3.line()
         .x(d => x(d.date))
-        .y(d => y(d.totalPoints));
-
+        .y(d => y(d.cumulativePoints));
+    
       guildNames.forEach(guild => {
         const guildData = guildDataMap[guild];
         chartG.append("path")
@@ -272,7 +277,7 @@
           .enter().append("circle")
           .attr("class", `dot-${guild}`)
           .attr("cx", d => x(d.date))
-          .attr("cy", d => y(d.totalPoints))
+          .attr("cy", d => y(d.cumulativePoints))
           .attr("r", 3)
           .attr("fill", color(guild));
       });
@@ -301,8 +306,8 @@
         .attr("y", margin.top / 2)
         .attr("text-anchor", "middle")
         .style("font-size", "16px")
-        .text("Daily Total Points Progression for All Guilds (Last 7 Days)");
-
+        .text("Cumulative Total Points Progression for Top 10 Guilds (Last 7 Days)");
+    
       const svgString = d3n.svgString();
       fs.writeFileSync("combinedGuildTotalPoints.svg", svgString);
       console.log("Combined guild total points chart saved as combinedGuildTotalPoints.svg");
