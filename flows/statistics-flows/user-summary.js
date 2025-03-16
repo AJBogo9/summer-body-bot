@@ -17,8 +17,8 @@ userSummaryScene.enter(async (ctx) => {
     const [summary] = await Promise.all([
       pointService.getUserSummary(userId),
     ])
-    const titlePadding = 17
-    const valuePadding = 5
+    const titlePadding = 21
+    const valuePadding = 6
 
     let message = '*Your Points Summary* 📊\n\n'
     message += `*Total of* ${escapeMarkdownV2(summary.total)} pts \n\n`

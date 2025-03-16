@@ -23,8 +23,8 @@ teamMemberRankingsScene.enter(async (ctx) => {
 
     const rankings = await pointService.getTeamMemberRankings(userId)
     let message = `*${escapeMarkdownV2(rankings[0].teamName)} Rankings* 🏅\n\n`
-    const titlePadding = 25
-    const valuePadding = 8
+    const titlePadding = 21
+    const valuePadding = 6
 
     const emojis = ['⒈ ', '⒉ ', '⒊ ', '⒋ ', '⒌ ', '⒍ ', '⒎ ', '⒏ ', '⒐ ', '⒑ ', '⒒ ', '⒓ ', '⒔ ', '⒕ ', '⒖ ', '⒗ ', '⒘ ', '⒙ ', '⒚ ', '⒛ ']
 

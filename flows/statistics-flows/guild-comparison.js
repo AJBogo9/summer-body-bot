@@ -12,7 +12,7 @@ guildComparisonScene.enter(async (ctx) => {
       await ctx.reply("No guild data available.")
       return ctx.scene.leave()
     }
-    const validStandings = standings.filter(guild => guild.participants > 0 && guild.total.total > 0)
+    const validStandings = standings.filter(guild => guild.participants > 2 && guild.total.total > 0)
     if (validStandings.length === 0) {
       await ctx.reply("No guild data available.")
       return ctx.scene.leave()
@@ -21,7 +21,7 @@ guildComparisonScene.enter(async (ctx) => {
     const sortedByAverage = [...validStandings].sort((a, b) => b.total.average - a.total.average)
 
     const titlePadding = 15
-    const valuePadding = 10
+    const valuePadding = 6
 
     let message = '*Guilds Comparison* 🏆\n\n'
 

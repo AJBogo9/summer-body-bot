@@ -14,8 +14,8 @@ topUsersScene.enter(async (ctx) => {
     }
     
     let message = "*Top 15 Participants \\(total points\\)* ⭐\n\n"
-    const titlePadding = 24
-    const valuePadding = 4
+    const titlePadding = 21
+    const valuePadding = 6
     
     const emojis = ['⒈ ', '⒉ ', '⒊ ', '⒋ ', '⒌ ', '⒍ ', '⒎ ', '⒏ ', '⒐ ', '⒑ ', '⒒ ', '⒓ ', '⒔ ', '⒕ ', '⒖ ', '⒗ ', '⒘ ', '⒙ ', '⒚ ', '⒛ ']
 
