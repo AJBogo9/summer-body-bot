@@ -89,7 +89,7 @@ async function generateLandscapePdf() {
   doc.moveDown(1)
 
   let guildStatsArr = await pointService.getGuildsTotals()
-  guildStatsArr = guildStatsArr.filter(gs => parseFloat(gs.total.total) > 0)
+  guildStatsArr = guildStatsArr.filter(gs => gs.participants > 2 && gs.total.total > 0)
   guildStatsArr.sort((a, b) => parseFloat(b.total.average) - parseFloat(a.total.average))
   const overallTotalPoints = guildStatsArr.reduce((sum, gs) => sum + parseFloat(gs.total.total), 0)
 
@@ -147,7 +147,7 @@ async function generateLandscapePdf() {
     const titleY = y + 23
 
     doc.text(gs.guild, colGuildX, titleY, { width: colGuildWidth, align: 'center' })
-    doc.text(gs.total.total.toString(), colTotalX, titleY, { width: colTotalWidth, align: 'center' })
+    doc.text(gs.total.total.toFixed(2).toString(), colTotalX, titleY, { width: colTotalWidth, align: 'center' })
     doc.text(gs.participants.toString(), colParticipantsX, titleY, { width: colParticipantsWidth, align: 'center' })
     doc.text(gs.total.average.toString(), colAvgX, titleY, { width: colAvgWidth, align: 'center' })
     doc.fontSize(10).font('Helvetica')
