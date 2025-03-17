@@ -1,11 +1,12 @@
 const PDFDocument = require('pdfkit')
-const SVGtoPDF = require('svg-to-pdfkit')
+//const SVGtoPDF = require('svg-to-pdfkit')
 const fs = require('fs')
 const path = require('path')
 const mongoose = require('mongoose')
 const config = require('./config')
 const User = require('./models/user-model')
 const Team = require('./models/team-model')
+const pointService = require('./services/point-service')
 
 const guildLogos = {
   TiK: path.join(__dirname, 'logos', 'tik_logo.png'),
@@ -24,37 +25,6 @@ const guildLogos = {
   TOKYO: path.join(__dirname, 'logos', 'tokyo_logo.png'),
   AK: path.join(__dirname, 'logos', 'ak_logo.png'),
   TF: path.join(__dirname, 'logos', 'tf_logo.png'),
-}
-
-async function getGuildStats() {
-  const teams = await Team.find({})
-  const users = await User.find({})
-
-  const guildStats = {}
-
-  teams.forEach(team => {
-    if (!guildStats[team.guild]) {
-      guildStats[team.guild] = { guild: team.guild, totalPoints: 0, participants: 0, teams: [], users: [] }
-    }
-    guildStats[team.guild].totalPoints += team.points.total
-    guildStats[team.guild].teams.push(team)
-  })
-  users.forEach(user => {
-    if (!guildStats[user.guild]) {
-      guildStats[user.guild] = { guild: user.guild, totalPoints: 0, participants: 0, teams: [], users: [] }
-    }
-    guildStats[user.guild].participants += 1
-    guildStats[user.guild].users.push(user)
-  })
-
-  for (const guild in guildStats) {
-    const stats = guildStats[guild]
-    stats.totalPoints = parseFloat(stats.totalPoints.toFixed(1))
-    stats.average = stats.participants > 0
-      ? (stats.totalPoints / stats.participants).toFixed(1)
-      : 0
-  }
-  return Object.values(guildStats)
 }
 
 async function getTopUsersForGuild(guild, limit = 5) {
@@ -105,85 +75,6 @@ async function getOverallUserRanking(limit = 10) {
   ])
 }
 
-async function getOverallTeamAverageRanking(limit = 5) {
-  return await Team.aggregate([
-    { $match: { "members.2": { $exists: true } } },
-    { $lookup: {
-        from: 'users',
-        localField: 'members',
-        foreignField: '_id',
-        as: 'teamMembers'
-    }},
-    { $addFields: {
-        eligibleMembers: {
-          $filter: {
-            input: "$teamMembers",
-            as: "member",
-            cond: { $gt: [ "$$member.points.total", 0 ] }
-          }
-        }
-    }},
-    { $addFields: { eligibleCount: { $size: "$eligibleMembers" } } },
-    { $addFields: {
-        eligibleTotal: {
-          $sum: {
-            $map: {
-              input: "$eligibleMembers",
-              as: "member",
-              in: "$$member.points.total"
-            }
-          }
-        }
-    }},
-    { $addFields: {
-        averagePoints: {
-          $cond: [
-            { $gt: [ "$eligibleCount", 0 ] },
-            { $round: [ { $divide: [ "$eligibleTotal", "$eligibleCount" ] }, 1 ] },
-            0
-          ]
-        }
-    }},
-    { $addFields: {
-        avgExercise: {
-          $cond: [
-            { $gt: [ "$eligibleCount", 0 ] },
-            { $round: [ { $avg: { $map: { input: "$eligibleMembers", as: "member", in: "$$member.points.exercise" } } }, 1 ] },
-            null
-          ]
-        },
-        avgSportsTurn: {
-          $cond: [
-            { $gt: [ "$eligibleCount", 0 ] },
-            { $round: [ { $avg: { $map: { input: "$eligibleMembers", as: "member", in: "$$member.points.sportsTurn" } } }, 1 ] },
-            null
-          ]
-        },
-        avgHealth: {
-          $cond: [
-            { $gt: [ "$eligibleCount", 0 ] },
-            { $round: [ { $avg: { $map: { 
-                input: "$eligibleMembers", 
-                as: "member", 
-                in: {
-                  $add: [
-                    { $ifNull: [ "$$member.points.tryRecipe", 0 ] },
-                    { $ifNull: [ "$$member.points.goodSleep", 0 ] },
-                    { $ifNull: [ "$$member.points.meditate", 0 ] },
-                    { $ifNull: [ "$$member.points.lessAlc", 0 ] },
-                    { $ifNull: [ "$$member.points.trySport", 0 ] }
-                  ]
-                }
-              } } }, 1 ] },
-            null
-          ]
-        }
-    }},
-    { $sort: { averagePoints: -1 } },
-    { $limit: limit }
-  ])
-}
-
 async function generateLandscapePdf() {
   const doc = new PDFDocument({ layout: 'landscape', size: 'A4', margin: 30 })
   const date = new Date()
@@ -197,10 +88,10 @@ async function generateLandscapePdf() {
   //doc.fontSize(12).text(`Generated on: ${new Date().toDateString()}`, { align: 'center' })
   doc.moveDown(1)
 
-  let guildStatsArr = await getGuildStats()
-  guildStatsArr = guildStatsArr.filter(gs => parseFloat(gs.totalPoints) > 0)
-  guildStatsArr.sort((a, b) => parseFloat(b.average) - parseFloat(a.average))
-  const overallTotalPoints = guildStatsArr.reduce((sum, gs) => sum + gs.totalPoints, 0)
+  let guildStatsArr = await pointService.getGuildsTotals()
+  guildStatsArr = guildStatsArr.filter(gs => parseFloat(gs.total.total) > 0)
+  guildStatsArr.sort((a, b) => parseFloat(b.total.average) - parseFloat(a.total.average))
+  const overallTotalPoints = guildStatsArr.reduce((sum, gs) => sum + parseFloat(gs.total.total), 0)
 
   const margin = 30
   const availableWidth = 842 - margin * 2
@@ -256,29 +147,26 @@ async function generateLandscapePdf() {
     const titleY = y + 23
 
     doc.text(gs.guild, colGuildX, titleY, { width: colGuildWidth, align: 'center' })
-    doc.text(gs.totalPoints.toString(), colTotalX, titleY, { width: colTotalWidth, align: 'center' })
+    doc.text(gs.total.total.toString(), colTotalX, titleY, { width: colTotalWidth, align: 'center' })
     doc.text(gs.participants.toString(), colParticipantsX, titleY, { width: colParticipantsWidth, align: 'center' })
-    doc.text(gs.average.toString(), colAvgX, titleY, { width: colAvgWidth, align: 'center' })
-    doc.fontSize(10)
+    doc.text(gs.total.average.toString(), colAvgX, titleY, { width: colAvgWidth, align: 'center' })
+    doc.fontSize(10).font('Helvetica')
     const top5Y = y + 12
 
     const topUsers = await getTopUsersForGuild(gs.guild, 5)
     const topUsersStr = topUsers.map(u => `${u.name} (${u.points.total})`).join(', ')
     doc.text(topUsersStr, colTopUsersX, top5Y, { width: colTopUsersWidth, align: 'left' })
 
-    const eligibleUsers = gs.users.filter(u => u.points.total > 0)
-    let avgExercise = 'N/A', avgSportsTurn = 'N/A', avgHealth = 'N/A'
-    if (eligibleUsers.length > 0) {
-      avgExercise = (eligibleUsers.reduce((sum, u) => sum + (u.points.exercise || 0), 0) / eligibleUsers.length).toFixed(2)
-      avgSportsTurn = (eligibleUsers.reduce((sum, u) => sum + (u.points.sportsTurn || 0), 0) / eligibleUsers.length).toFixed(2)
-      const totalHealth = eligibleUsers.reduce((sum, u) => {
-        const health = (u.points.tryRecipe || 0) + (u.points.goodSleep || 0) + (u.points.meditate || 0) + (u.points.lessAlc || 0) + (u.points.trySport || 0)
-        return sum + health
-      }, 0)
-      avgHealth = (totalHealth / eligibleUsers.length).toFixed(2)
-    }
-    const guildAveragesStr = `Average exercise points: ${avgExercise}\nAverage sports session points: ${avgSportsTurn}\nAverage health points: ${avgHealth}`
-    doc.text(guildAveragesStr, colGuildAveragesX, top5Y, { width: colGuildAveragesWidth, align: 'left' })
+    const avgExercise = gs.exercise.average
+    const avgSportsTurn = gs.sportsTurn.average
+    const avgTrySport = gs.trySport.average
+    const totalHealth = parseFloat(gs.tryRecipe.total) +
+                        parseFloat(gs.goodSleep.total) +
+                        parseFloat(gs.meditate.total) +
+                        parseFloat(gs.lessAlc.total)
+    const avgHealth = gs.participants > 0 ? (totalHealth / gs.participants).toFixed(2) : 'N/A'
+    const guildAveragesStr = `Average exercise points: ${avgExercise}\nAverage sports session points: ${avgSportsTurn}\nAverage try sport points: ${avgTrySport}\nAverage health points: ${avgHealth}`
+    doc.text(guildAveragesStr, colGuildAveragesX + 40, top5Y - 8, { width: colGuildAveragesWidth, align: 'left' })
 
     doc.moveDown(3.5)
 
@@ -344,21 +232,23 @@ async function generateLandscapePdf() {
       doc.fontSize(13).font('Helvetica')
       const user = topUsersOverall[i]
       rowY = doc.y
-      doc.text((i+1).toString(), colRankX, rowY, { width: colRankWidth, align: 'center' })
+      const middleY = rowY + 12
+      doc.text((i+1).toString(), colRankX, middleY, { width: colRankWidth, align: 'center' })
       doc.fontSize(12).font('Helvetica')
-      doc.text(user.name, colNameX, rowY, { width: colNameWidth, align: 'center' })
-      doc.text(user.guild, colGuildX, rowY, { width: colGuildWidth, align: 'center' })
+      doc.text(user.name, colNameX, middleY, { width: colNameWidth, align: 'center' })
+      doc.text(user.guild, colGuildX, middleY, { width: colGuildWidth, align: 'center' })
       const teamName = user.team && user.team.name ? user.team.name : 'no team'
-      doc.text(teamName, colTeamX, rowY, { width: colTeamWidth, align: 'center' })
-      doc.text(user.points.total.toString(), colPointsX, rowY, { width: colPointsWidth, align: 'center' })
+      doc.text(teamName, colTeamX, middleY, { width: colTeamWidth, align: 'center' })
+      doc.text(user.points.total.toString(), colPointsX, middleY, { width: colPointsWidth, align: 'center' })
       
       const exercise = user.points.exercise || 0
       const sportsTurn = user.points.sportsTurn || 0
-      const healthTotal = (user.points.tryRecipe || 0) + (user.points.goodSleep || 0) + (user.points.meditate || 0) + (user.points.lessAlc || 0) + (user.points.trySport || 0)
-      const categoriesStr = `Exercise points: ${exercise.toFixed(2)}\nSports session points: ${sportsTurn}\nHealth points: ${healthTotal}`
+      const trySport = user.points.trySport || 0
+      const healthTotal = (user.points.tryRecipe || 0) + (user.points.goodSleep || 0) + (user.points.meditate || 0) + (user.points.lessAlc || 0)
+      const categoriesStr = `Exercise points: ${exercise.toFixed(2)}\nSports session points: ${sportsTurn.toFixed(2)}\nTry sport points: ${trySport.toFixed(2)}\nHealth points: ${healthTotal.toFixed(2)}`
       
-      doc.fontSize(10).font('Helvetica')
-      doc.text(categoriesStr, colCategoriesX, rowY, { width: colCategoriesWidth, align: 'left' })
+      doc.fontSize(8).font('Helvetica')
+      doc.text(categoriesStr, colCategoriesX + 45, rowY, { width: colCategoriesWidth, align: 'left' })
       doc.moveDown(1)
     }
   }
@@ -396,37 +286,54 @@ async function generateLandscapePdf() {
     doc.moveDown(0.5)
     doc.moveTo(margin, doc.y).lineTo(842 - margin, doc.y).stroke()
     doc.moveDown(0.5)
-    const topTeamsAvg = await getOverallTeamAverageRanking(5)
-    for (let i = 0; i < topTeamsAvg.length; i++) {
+    
+    const teamRankings = (await pointService.getTeamRankings()).slice(0, 5)
+    for (let i = 0; i < teamRankings.length; i++) {
       doc.fontSize(12).font('Helvetica')
-      const team = topTeamsAvg[i]
+      const teamRanking = teamRankings[i]
       rowY = doc.y
-      doc.text((i+1).toString(), colRankX, rowY, { width: colRankWidth, align: 'center' })
-      doc.text(team.name, colTeamX, rowY, { width: colTeamWidth, align: 'center' })
-      const eligibleCount = team.eligibleCount || 0
-      doc.text(eligibleCount.toString(), colEligibleX, rowY, { width: colEligibleWidth, align: 'center' })
-      doc.text(team.averagePoints ? team.averagePoints.toFixed(2).toString() : 'N/A', colAvgX, rowY, { width: colAvgWidth, align: 'center' })
+      const middleY = rowY + 12
+      const teamDoc = await Team.findOne({ name: teamRanking.name }).populate('members')
+      const eligibleMembers = teamDoc.members.filter(m => m.points.total > 0)
+      const eligibleCount = eligibleMembers.length
+      let avgExercise = 'N/A', avgSportsTurn = 'N/A', avgTrySport = 'N/A', avgHealth = 'N/A'
+      if (eligibleMembers.length > 0) {
+        avgExercise = (eligibleMembers.reduce((sum, m) => sum + (m.points.exercise || 0), 0) / eligibleMembers.length).toFixed(2)
+        avgSportsTurn = (eligibleMembers.reduce((sum, m) => sum + (m.points.sportsTurn || 0), 0) / eligibleMembers.length).toFixed(2)
+        const totalTrySport = eligibleMembers.reduce((sum, m) => sum + (m.points.trySport || 0), 0)
+        const totalHealth = eligibleMembers.reduce((sum, m) => {
+          const health = (m.points.tryRecipe || 0) + (m.points.goodSleep || 0) + (m.points.meditate || 0) + (m.points.lessAlc || 0)
+          return sum + health
+        }, 0)
+        avgHealth = (totalHealth / eligibleMembers.length).toFixed(2)
+        avgTrySport = (totalTrySport / eligibleMembers.length).toFixed(2)
+      }
+      
+      doc.text((i+1).toString(), colRankX, middleY, { width: colRankWidth, align: 'center' })
+      doc.text(teamRanking.name, colTeamX, middleY, { width: colTeamWidth, align: 'center' })
+      doc.text(eligibleCount.toString(), colEligibleX, middleY, { width: colEligibleWidth, align: 'center' })
+      doc.text(teamRanking.averagePointsPerMember ? teamRanking.averagePointsPerMember.toString() : 'N/A', colAvgX, middleY, { width: colAvgWidth, align: 'center' })
       
       let teamAvgStr = 'N/A'
-      if (team.avgExercise !== null && team.avgSportsTurn !== null && team.avgHealth !== null) {
-        teamAvgStr = `Average exercise points: ${team.avgExercise.toFixed(2)}\nAverage sports session points: ${team.avgSportsTurn.toFixed(2)}\nAverage health points: ${team.avgHealth.toFixed(2)}`
+      if (avgExercise !== 'N/A' && avgSportsTurn !== 'N/A' && avgHealth !== 'N/A' && avgTrySport !== 'N/A') {
+        teamAvgStr = `Average exercise points: ${avgExercise}\nAverage sports session points: ${avgSportsTurn}\nAverage try sport points: ${avgTrySport}\nAverage health points: ${avgHealth}`
       }
       doc.fontSize(10).font('Helvetica')
-      doc.text(teamAvgStr, colTeamAveragesX, rowY, { width: colTeamAveragesWidth, align: 'left' })
+      doc.text(teamAvgStr, colTeamAveragesX + 65, rowY, { width: colTeamAveragesWidth, align: 'left' })
       
       doc.moveDown(0.5)
-      const memberNames = team.teamMembers.map(m => m.name).join(', ')
+      const memberNames = teamDoc.members.map(m => m.name).join(', ')
       doc.fontSize(10).text(`Members: ${memberNames}`, colTeamX, doc.y, { width: availableWidth - (colTeamX - margin) })
       doc.moveDown(1)
       doc.fontSize(12)
     }
   }
 
-  doc.addPage({ layout: 'landscape', size: 'A4', margin: 30 })
+  // --- Section 4: SVG Chart --- UNDER DEVELOPMENT
+  /*doc.addPage({ layout: 'landscape', size: 'A4', margin: 30 })
 
   const svgString = fs.readFileSync('combinedGuildTotalPoints.svg', 'utf8')
-
-  SVGtoPDF(doc, svgString, 30, 30, { width: 1042, height: 745 })
+  SVGtoPDF(doc, svgString, 30, 30, { width: 1042, height: 745 })*/
 
   doc.end()
   console.log(`PDF generated at: ${outputPath}`)
