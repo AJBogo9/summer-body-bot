@@ -28,25 +28,111 @@
       return data
     }
 
-    async function getDailyAveragePointsByGuild() {
+    async function getGuildInitialAveragePoints() {
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-      const data = await User.aggregate([
-        { $match: { createdAt: { $gte: sevenDaysAgo } } },
-        {
-          $group: {
-            _id: {
-              guild: "$guild",
-              date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }
-            },
-            totalPoints: { $sum: "$points.total" },
-            count: { $sum: 1 }
+      const agg = await User.aggregate([
+        { $match: { createdAt: { $lte: sevenDaysAgo } } },
+        { $group: {
+             _id: "$guild",
+             totalPoints: { $sum: "$points.total" },
+             count: { $sum: 1 }
           }
         },
+        { $addFields: { average: { $divide: ["$totalPoints", "$count"] } } }
+      ])
+      const initialValues = {}
+      agg.forEach(doc => {
+        initialValues[doc._id] = doc.average
+      })
+      return initialValues
+    }  
+    
+    async function getGuildInitialTotalPoints() {
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      const agg = await User.aggregate([
+        { $match: { createdAt: { $lte: sevenDaysAgo } } },
+        { $group: {
+             _id: "$guild",
+             totalPoints: { $sum: "$points.total" }
+          }
+        }
+      ])
+      const initialTotals = {}
+      agg.forEach(doc => {
+        initialTotals[doc._id] = doc.totalPoints
+      })
+      return initialTotals
+    }    
+
+    async function getDailyAveragePointsByGuild() {
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    
+      const initialDataAgg = await User.aggregate([
+        { $match: { createdAt: { $lte: sevenDaysAgo } } },
+        { $group: {
+             _id: "$guild",
+             totalPoints: { $sum: "$points.total" },
+             count: { $sum: 1 }
+          }
+        },
+        { $addFields: { 
+             avgPoints: { $divide: [ "$totalPoints", "$count" ] },
+             initialTotal: "$totalPoints"  // Added field for initial total points
+        } }
+      ])
+    
+      const initialData = initialDataAgg.map(doc => ({
+        _id: { guild: doc._id, date: sevenDaysAgo.toISOString().split("T")[0] },
+        totalPoints: doc.totalPoints,
+        count: doc.count,
+        avgPoints: doc.avgPoints,
+        initialTotal: doc.initialTotal
+      }))
+    
+      const dailyData = await User.aggregate([
+        { $match: { createdAt: { $gte: sevenDaysAgo } } },
+        { $group: {
+             _id: {
+               guild: "$guild",
+               date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }
+             },
+             totalPoints: { $sum: "$points.total" },
+             count: { $sum: 1 }
+        }},
         { $addFields: { avgPoints: { $divide: [ "$totalPoints", "$count" ] } } },
         { $sort: { "_id.date": 1 } }
       ])
-      return data
-    }
+    
+      const combinedData = initialData.concat(dailyData)
+      combinedData.sort((a, b) => {
+        if (a._id.guild === b._id.guild) {
+          return a._id.date.localeCompare(b._id.date)
+        }
+        return a._id.guild.localeCompare(b._id.guild)
+      })
+    
+      return combinedData
+    }    
+
+    function fillMissingDays(data, start, end, valueKey, initialValue) {
+      const filled = []
+      let currentValue = initialValue
+      let dataIndex = 0
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const dStr = d.toISOString().split("T")[0]
+        if (dataIndex < data.length) {
+          const pointDateStr = data[dataIndex].date.toISOString().split("T")[0]
+          if (dStr === pointDateStr) {
+            currentValue = data[dataIndex][valueKey]
+            filled.push({ date: new Date(d), [valueKey]: currentValue })
+            dataIndex++
+            continue
+          }
+        }
+        filled.push({ date: new Date(d), [valueKey]: currentValue })
+      }
+      return filled
+    } 
 
     async function getUsersByGuild(guild) {
       return await User.find({ guild })
@@ -107,8 +193,16 @@
           })
         })
 
+        const initialAverages = await getGuildInitialAveragePoints()
+        const globalStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+        const globalEnd = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
+        for (const guild in guildDataMap) {
+          const initialValue = initialAverages[guild] || 0
+          guildDataMap[guild] = fillMissingDays(guildDataMap[guild], globalStart, globalEnd, "avgPoints", initialValue)
+        }
+
         const x = d3.scaleTime()
-          .domain(d3.extent(allDates))
+          .domain(d3.extent([globalStart, globalEnd]))
           .range([0, chartWidth])
         const y = d3.scaleLinear()
           .domain([0, d3.max(allAvgPoints)])
@@ -193,7 +287,7 @@
 
         const svgString = d3n.svgString()
         fs.writeFileSync("combinedGuildAverages.svg", svgString)
-        console.log("Combined guild average chart with legend saved as combinedGuildAverages.svg")
+        console.log("Average Points SVG generated at: combinedGuildAverages.svg")
     }
 
     async function generateCombinedGuildTotalPointsChart(data) {
@@ -257,8 +351,16 @@
         })
       })
 
+      const initialTotals = await getGuildInitialTotalPoints()
+      const globalStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      const globalEnd = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
+      for (const guild in guildDataMap) {
+        const initialValue = initialTotals[guild] || 0
+        guildDataMap[guild] = fillMissingDays(guildDataMap[guild], globalStart, globalEnd, "cumulativePoints", initialValue)
+      }
+
       const x = d3.scaleTime()
-        .domain(d3.extent(allDates))
+      .domain(d3.extent([globalStart, globalEnd]))
         .range([0, chartWidth])
 
       const y = d3.scaleLinear()
@@ -425,16 +527,19 @@
     }
 
     async function generateHistogramsForAllGuilds() {
-      const guilds = User.validGuilds
+      const guilds = User.validGuilds;
       for (const guild of guilds) {
-        const users = await getUsersByGuild(guild)
-        if (users.length > 0) {
-          await generateGuildHistogramChart(guild, users)
+        const users = await getUsersByGuild(guild);
+        const validUsers = users.filter(user => user.points.total > 0);
+        const totalParticipants = validUsers.length;
+        const totalPoints = validUsers.reduce((sum, user) => sum + user.points.total, 0);
+        if (totalParticipants > 2 && totalPoints > 0) {
+          await generateGuildHistogramChart(guild, validUsers);
         } else {
-          console.log(`No users found for guild ${guild}`)
+          console.log(`Skipping guild ${guild}: participants=${totalParticipants}, totalPoints=${totalPoints}`);
         }
       }
-    }
+    }    
 
     async function generateGuildScatterPlot() {
       const outerWidth = 1042, outerHeight = 745
@@ -461,8 +566,10 @@
         .range([0, width])
         .nice()
         
+      console.log(d3.max(data, d => d.average))
+
       const y = d3.scaleLinear()
-        .domain([0, d3.max(data, d => d.average)])
+        .domain([0, 155])
         .range([height, 0])
         .nice()
       

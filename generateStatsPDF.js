@@ -84,7 +84,8 @@ async function generateLandscapePdf() {
   const hours = String(date.getHours()).padStart(2, '0')
   const minutes = String(date.getMinutes()).padStart(2, '0')
   const outputPath = `stats_${hours}_${minutes}.pdf`
-  doc.pipe(fs.createWriteStream(outputPath))
+  const stream = fs.createWriteStream(outputPath)
+  doc.pipe(stream)
 
   doc.fontSize(20).text('Kesäkuntoon 2025 Statistics', { align: 'center' })
   //doc.moveDown(0.5)
@@ -336,19 +337,25 @@ async function generateLandscapePdf() {
   doc.addPage({ layout: 'landscape', size: 'A4', margin: 30 })
 
   let svgString = fs.readFileSync('combinedGuildTotalPoints.svg', 'utf8')
-  SVGtoPDF(doc, svgString, 30, 30, { width: 1042, height: 745 })
+  await SVGtoPDF(doc, svgString, 30, 30, { width: 1042, height: 745 })
 
   doc.addPage({ layout: 'landscape', size: 'A4', margin: 30 })
 
   svgString = fs.readFileSync('combinedGuildAverages.svg', 'utf8')
-  SVGtoPDF(doc, svgString, 30, 30, { width: 1042, height: 745 })
+  await SVGtoPDF(doc, svgString, 30, 30, { width: 1042, height: 745 })
 
   doc.addPage({ layout: 'landscape', size: 'A4', margin: 30 })
 
   svgString = fs.readFileSync('guildScatterPlot.svg', 'utf8')
-  SVGtoPDF(doc, svgString, 30, 30, { width: 1042, height: 745 })
+  await SVGtoPDF(doc, svgString, 30, 30, { width: 1042, height: 745 })
 
   doc.end()
+
+  await new Promise((resolve, reject) => {
+    stream.on('finish', resolve)
+    stream.on('error', reject)
+  })
+
   console.log(`PDF generated at: ${outputPath}`)
 }
 
@@ -358,15 +365,15 @@ async function generateHistogramPdf() {
   const hours = String(date.getHours()).padStart(2, '0')
   const minutes = String(date.getMinutes()).padStart(2, '0')
   const outputPath = `histograms_${hours}_${minutes}.pdf`
-  doc.pipe(fs.createWriteStream(outputPath))
+  const stream = fs.createWriteStream(outputPath)
+  doc.pipe(stream)
 
   let guildStatsArr = await pointService.getGuildsTotals()
   guildStatsArr = guildStatsArr.filter(gs => gs.participants > 2 && gs.total.total > 0)
   guildStatsArr.sort((a, b) => parseFloat(b.total.average) - parseFloat(a.total.average))
 
-  const topGuilds = guildStatsArr.slice(0, 10)
-  for (let i = 0; i < topGuilds.length; i++) {
-    const gs = topGuilds[i]
+  for (let i = 0; i < guildStatsArr.length; i++) {
+    const gs = guildStatsArr[i]
     const guildSvg = `histogram_${gs.guild}.svg`
     if (fs.existsSync(guildSvg)) {
       const svgString = fs.readFileSync(guildSvg, 'utf8')
@@ -375,13 +382,51 @@ async function generateHistogramPdf() {
       console.log(`SVG not found for ${gs.guild}`)
     }
   
-    if (i < topGuilds.length - 1) {
+    if (i < guildStatsArr.length - 1) {
       doc.addPage({ layout: 'landscape', size: 'A4', margin: 30 })
     }
   }
 
   doc.end()
+
+  await new Promise((resolve, reject) => {
+    stream.on('finish', resolve)
+    stream.on('error', reject)
+  })
+
   console.log(`Histogram PDF generated at: ${outputPath}`)
+}
+
+async function generateChartPdf() {
+  const doc = new PDFDocument({ layout: 'landscape', size: 'A4', margin: 30 })
+  const date = new Date()
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const outputPath = `charts_${hours}_${minutes}.pdf`
+  const stream = fs.createWriteStream(outputPath)
+  doc.pipe(stream)
+
+  let svgString = fs.readFileSync('combinedGuildTotalPoints.svg', 'utf8')
+  await SVGtoPDF(doc, svgString, 30, 30, { width: 1042, height: 745 })
+
+  doc.addPage({ layout: 'landscape', size: 'A4', margin: 30 })
+
+  svgString = fs.readFileSync('combinedGuildAverages.svg', 'utf8')
+  await SVGtoPDF(doc, svgString, 30, 30, { width: 1042, height: 745 })
+
+  doc.addPage({ layout: 'landscape', size: 'A4', margin: 30 })
+
+  svgString = fs.readFileSync('guildScatterPlot.svg', 'utf8')
+  await SVGtoPDF(doc, svgString, 30, 30, { width: 1042, height: 745 })
+
+  doc.end()
+
+  await new Promise((resolve, reject) => {
+    stream.on('finish', resolve)
+    stream.on('error', reject)
+  })
+
+  console.log(`Chart PDF generated at: ${outputPath}`)
 }
 
 async function run() {
@@ -395,6 +440,18 @@ async function run() {
       process.exit(0)
     } catch (error) {
       console.error('Error generating histogram PDF:', error)
+      process.exit(1)
+    }
+  } else if (process.argv.includes('--charts')) { 
+    try {
+      await mongoose.connect(config.mongodbUri)
+      console.log('Connected to MongoDB')
+      await generateChartPdf()
+      await mongoose.disconnect()
+      console.log('Disconnected from MongoDB')
+      process.exit(0)
+    } catch (error) {
+      console.error('Error generating chart PDF:', error)
       process.exit(1)
     }
   } else {
