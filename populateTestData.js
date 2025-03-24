@@ -59,8 +59,8 @@ async function populateData() {
         // - lessAlc: 0 or 1.
         const randomPoints = {
           exercise: Math.floor(Math.random() * 50),
-          sportsTurn: Math.floor(Math.random() * 25),
-          trySport: Math.random() < 0.5 ? 3 : 0,
+          sportsTurn: Math.random() < 0.5 ? Math.random() < 0.5 ? 10 : 5 : 0,
+          trySport: Math.random() < 0.5 ? 5 : 0,
           tryRecipe: Math.random() < 0.5 ? 5 : 0,
           goodSleep: Math.random() < 0.5 ? 8 : 0,
           meditate: Math.random() < 0.5 ? 5 : 0,

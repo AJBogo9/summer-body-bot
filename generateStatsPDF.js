@@ -1,5 +1,5 @@
 const PDFDocument = require('pdfkit')
-//const SVGtoPDF = require('svg-to-pdfkit')
+const SVGtoPDF = require('svg-to-pdfkit')
 const fs = require('fs')
 const path = require('path')
 const mongoose = require('mongoose')
@@ -25,6 +25,9 @@ const guildLogos = {
   TOKYO: path.join(__dirname, 'logos', 'tokyo_logo.png'),
   AK: path.join(__dirname, 'logos', 'ak_logo.png'),
   TF: path.join(__dirname, 'logos', 'tf_logo.png'),
+  PJK: path.join(__dirname, 'logos', 'pjk_logo.png'),
+  VK: path.join(__dirname, 'logos', 'vk_logo.png'),
+  KK: path.join(__dirname, 'logos', 'kk_logo.png'),
 }
 
 async function getTopUsersForGuild(guild, limit = 5) {
@@ -321,35 +324,91 @@ async function generateLandscapePdf() {
       doc.fontSize(10).font('Helvetica')
       doc.text(teamAvgStr, colTeamAveragesX + 65, rowY, { width: colTeamAveragesWidth, align: 'left' })
       
-      doc.moveDown(0.5)
+      doc.moveDown(1)
       const memberNames = teamDoc.members.map(m => m.name).join(', ')
       doc.fontSize(10).text(`Members: ${memberNames}`, colTeamX, doc.y, { width: availableWidth - (colTeamX - margin) })
-      doc.moveDown(1)
+      doc.moveDown(1.5)
       doc.fontSize(12)
     }
   }
 
-  // --- Section 4: SVG Chart --- UNDER DEVELOPMENT
-  /*doc.addPage({ layout: 'landscape', size: 'A4', margin: 30 })
+  // --- Section 4: SVG Charts ---
+  doc.addPage({ layout: 'landscape', size: 'A4', margin: 30 })
 
-  const svgString = fs.readFileSync('combinedGuildTotalPoints.svg', 'utf8')
-  SVGtoPDF(doc, svgString, 30, 30, { width: 1042, height: 745 })*/
+  let svgString = fs.readFileSync('combinedGuildTotalPoints.svg', 'utf8')
+  SVGtoPDF(doc, svgString, 30, 30, { width: 1042, height: 745 })
+
+  doc.addPage({ layout: 'landscape', size: 'A4', margin: 30 })
+
+  svgString = fs.readFileSync('combinedGuildAverages.svg', 'utf8')
+  SVGtoPDF(doc, svgString, 30, 30, { width: 1042, height: 745 })
+
+  doc.addPage({ layout: 'landscape', size: 'A4', margin: 30 })
+
+  svgString = fs.readFileSync('guildScatterPlot.svg', 'utf8')
+  SVGtoPDF(doc, svgString, 30, 30, { width: 1042, height: 745 })
 
   doc.end()
   console.log(`PDF generated at: ${outputPath}`)
 }
 
+async function generateHistogramPdf() {
+  const doc = new PDFDocument({ layout: 'landscape', size: 'A4', margin: 30 })
+  const date = new Date()
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const outputPath = `histograms_${hours}_${minutes}.pdf`
+  doc.pipe(fs.createWriteStream(outputPath))
+
+  let guildStatsArr = await pointService.getGuildsTotals()
+  guildStatsArr = guildStatsArr.filter(gs => gs.participants > 2 && gs.total.total > 0)
+  guildStatsArr.sort((a, b) => parseFloat(b.total.average) - parseFloat(a.total.average))
+
+  const topGuilds = guildStatsArr.slice(0, 10)
+  for (let i = 0; i < topGuilds.length; i++) {
+    const gs = topGuilds[i]
+    const guildSvg = `histogram_${gs.guild}.svg`
+    if (fs.existsSync(guildSvg)) {
+      const svgString = fs.readFileSync(guildSvg, 'utf8')
+      await SVGtoPDF(doc, svgString, 30, 30, { width: 1042, height: 745 })
+    } else {
+      console.log(`SVG not found for ${gs.guild}`)
+    }
+  
+    if (i < topGuilds.length - 1) {
+      doc.addPage({ layout: 'landscape', size: 'A4', margin: 30 })
+    }
+  }
+
+  doc.end()
+  console.log(`Histogram PDF generated at: ${outputPath}`)
+}
+
 async function run() {
-  try {
-    await mongoose.connect(config.mongodbUri)
-    console.log('Connected to MongoDB')
-    await generateLandscapePdf()
-    await mongoose.disconnect()
-    console.log('Disconnected from MongoDB')
-    process.exit(0)
-  } catch (error) {
-    console.error('Error generating PDF:', error)
-    process.exit(1)
+  if (process.argv.includes('--histograms')) {
+    try {
+      await mongoose.connect(config.mongodbUri)
+      console.log('Connected to MongoDB')
+      await generateHistogramPdf()
+      await mongoose.disconnect()
+      console.log('Disconnected from MongoDB')
+      process.exit(0)
+    } catch (error) {
+      console.error('Error generating histogram PDF:', error)
+      process.exit(1)
+    }
+  } else {
+    try {
+      await mongoose.connect(config.mongodbUri)
+      console.log('Connected to MongoDB')
+      await generateLandscapePdf()
+      await mongoose.disconnect()
+      console.log('Disconnected from MongoDB')
+      process.exit(0)
+    } catch (error) {
+      console.error('Error generating PDF:', error)
+      process.exit(1)
+    }
   }
 }
 
