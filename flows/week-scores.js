@@ -8,9 +8,9 @@ const canAddPoints = require('../utils/can-add-points')
 const { formatList } = require('../utils/format-list')
 
 const PointMultipliers = {
-  sportsTurn: 10, // SporttiAppro theme week --> 2 * 5 points
-  trySport: 10, // SporttiAppro theme week --> 2 * 5 points
-  tryRecipe: 5,  
+  sportsTurn: 5,
+  trySport: 5,
+  tryRecipe: 5, // VegeAppro theme week --> can be chosen many times
   goodSleep: 8, 
   meditate: 5,
   lessAlc: 10,  
@@ -25,6 +25,12 @@ const DefaultPoints = {
   meditate: 0,
   total: 0,
 }
+
+const healthQuestions = [
+  { key: 'goodSleep', label: 'Good Sleep', points: PointMultipliers.goodSleep },
+  { key: 'meditate', label: 'Meditation', points: PointMultipliers.meditate },
+  { key: 'lessAlc', label: 'Less Alcohol', points: PointMultipliers.lessAlc },
+]
 
 const weekScoresWizard = new Scenes.WizardScene(
   'week_scores_wizard',
@@ -57,8 +63,8 @@ const weekScoresWizard = new Scenes.WizardScene(
   },
   async (ctx) => {
     if (ctx.updateType === 'message') {
-      await ctx.reply('Please use the provided buttons to select an activity.');
-      return;
+      await ctx.reply('Please use the provided buttons to select an activity.')
+      return
     }
 
     if (ctx.wizard.state.extraSportsPending) {
@@ -70,7 +76,7 @@ const weekScoresWizard = new Scenes.WizardScene(
       for (let i = 0; i < buttons.length; i += 4) {
         rows.push(buttons.slice(i, i + 4))
       }
-      rows.push([Markup.button.callback('Cancel & Exit', 'exit_wizard')]);
+      rows.push([Markup.button.callback('Cancel & Exit', 'exit_wizard')])
       const sentMessage = await ctx.reply(
         'How many sports sessions did you attend this week?',
         Markup.inlineKeyboard(rows)
@@ -83,10 +89,49 @@ const weekScoresWizard = new Scenes.WizardScene(
   },
   async (ctx) => {
     if (ctx.updateType === 'message') {
-      await ctx.reply('Please use the provided buttons to select an activity.');
-      return;
+      await ctx.reply('Please use the provided buttons to select an activity.')
+      return
     }
-
+    await ctx.reply(
+      'Did you try any new recipes/foods this week?',
+      Markup.inlineKeyboard([
+        Markup.button.callback('Yes', 'yes_recipe'),
+        Markup.button.callback('No', 'no_recipe'),
+        Markup.button.callback('Cancel & Exit', 'exit_wizard')
+      ])
+    )
+    return ctx.wizard.next()
+  },
+  async (ctx) => {
+    if (ctx.updateType === 'message') {
+      await ctx.reply('Please use the provided buttons to select an activity.')
+      return
+    }
+    if (ctx.wizard.state.extraRecipePending) {
+      const buttons = []
+      for (let i = 1; i <= 8; i++) {
+        buttons.push(Markup.button.callback(String(i), `recipe_${i}`))
+      }
+      const rows = []
+      for (let i = 0; i < buttons.length; i += 4) {
+        rows.push(buttons.slice(i, i + 4))
+      }
+      rows.push([Markup.button.callback('Cancel & Exit', 'exit_wizard')])
+      const sentMessage = await ctx.reply(
+        'How many new recipes/foods did you try this week?',
+        Markup.inlineKeyboard(rows)
+      )
+      ctx.wizard.state.recipeQuestionMessageId = sentMessage.message_id
+      return ctx.wizard.next()
+    }
+    await ctx.wizard.steps[ctx.wizard.cursor + 1](ctx)
+    return ctx.wizard.next()
+  },
+  async (ctx) => {
+    if (ctx.updateType === 'message') {
+      await ctx.reply('Please use the provided buttons to select an activity.')
+      return
+    }
     await ctx.reply(
       'Did you try a new sport or one you haven’t done in a while?',
       Markup.inlineKeyboard([
@@ -99,8 +144,8 @@ const weekScoresWizard = new Scenes.WizardScene(
   },
   async (ctx) => {
     if (ctx.updateType === 'message') {
-      await ctx.reply('Please use the provided buttons to select an activity.');
-      return;
+      await ctx.reply('Please use the provided buttons to select an activity.')
+      return
     }
     const promptMsg = await ctx.reply(
       'Next up are some health-related questions. Would you like to answer them?',
@@ -110,28 +155,28 @@ const weekScoresWizard = new Scenes.WizardScene(
         Markup.button.callback('Cancel & Exit', 'exit_wizard')
       ])
     )
-    ctx.wizard.state.promptMsgId = promptMsg.message_id;
+    ctx.wizard.state.promptMsgId = promptMsg.message_id
     return ctx.wizard.next()
   },
   async (ctx) => {
     if (ctx.updateType === 'message') {
-      await ctx.reply('Please use the provided buttons to select an activity.');
-      return;
+      await ctx.reply('Please use the provided buttons to select an activity.')
+      return
     }
 
     if (ctx.wizard.state.promptMsgId) {
       try {
-        await ctx.telegram.editMessageReplyMarkup(ctx.chat.id, ctx.wizard.state.promptMsgId, null,{})
+        await ctx.telegram.editMessageReplyMarkup(ctx.chat.id, ctx.wizard.state.promptMsgId, null, {})
       } catch (_err) { /**/ }
     }
 
-    const { pointsData } = ctx.wizard.state;
+    const { pointsData } = ctx.wizard.state
     const titlePadding = 26
     const valuePadding = 4
     let message = '*Do you confirm this information?*\n\n'
         message += formatList('Attended Sports Sessions', pointsData.sportsTurn > 0 ? pointsData.sportsTurn / PointMultipliers.sportsTurn : 'No', pointsData.sportsTurn > 0 ? titlePadding + 2 : titlePadding, valuePadding) + '\n'
         message += formatList('Tried a New Sport', pointsData.trySport ? 'Yes' : 'No', titlePadding, valuePadding) + '\n'
-        message += formatList('Tried a New Recipe', pointsData.tryRecipe ? 'Yes' : 'No', titlePadding, valuePadding) + '\n'
+        message += formatList('Tried New Recipes/Foods', pointsData.tryRecipe > 0 ? pointsData.tryRecipe / PointMultipliers.tryRecipe : 'No', pointsData.tryRecipe > 0 ? titlePadding + 2 : titlePadding, valuePadding) + '\n'
         message += formatList('Had Good Sleep', pointsData.goodSleep ? 'Yes' : 'No', titlePadding, valuePadding) + '\n'
         message += formatList('Meditated', pointsData.meditate ? 'Yes' : 'No', titlePadding, valuePadding) + '\n'
         message += formatList('Limited Alcohol', pointsData.lessAlc ? 'Yes' : 'No', titlePadding, valuePadding) + '\n\n'
@@ -150,17 +195,10 @@ const weekScoresWizard = new Scenes.WizardScene(
   },
 )
 
-const healthQuestions = [
-  { key: 'tryRecipe', label: 'New Recipe', points: PointMultipliers.tryRecipe },
-  { key: 'goodSleep', label: 'Good Sleep', points: PointMultipliers.goodSleep },
-  { key: 'meditate', label: 'Meditation', points: PointMultipliers.meditate },
-  { key: 'lessAlc', label: 'Less Alcohol', points: PointMultipliers.lessAlc },
-]
-
 weekScoresWizard.action('health_next', async (ctx) => {
   if (ctx.updateType === 'message') {
-    await ctx.reply('Please use the provided buttons to select an activity.');
-    return;
+    await ctx.reply('Please use the provided buttons to select an activity.')
+    return
   }
   ctx.wizard.state.healthAnswers = {}
   healthQuestions.forEach(q => ctx.wizard.state.healthAnswers[q.key] = false)
@@ -180,8 +218,8 @@ weekScoresWizard.action('health_next', async (ctx) => {
 
 weekScoresWizard.action(/toggle_(.+)/, async (ctx) => {
   if (ctx.updateType === 'message') {
-    await ctx.reply('Please use the provided buttons to select an activity.');
-    return;
+    await ctx.reply('Please use the provided buttons to select an activity.')
+    return
   }
   const key = ctx.match[1]
   ctx.wizard.state.healthAnswers[key] = !ctx.wizard.state.healthAnswers[key]
@@ -202,25 +240,24 @@ weekScoresWizard.action(/toggle_(.+)/, async (ctx) => {
 
 weekScoresWizard.action('health_submit', async (ctx) => {
   if (ctx.updateType === 'message') {
-    await ctx.reply('Please use the provided buttons to select an activity.');
-    return;
+    await ctx.reply('Please use the provided buttons to select an activity.')
+    return
   }
   const answers = ctx.wizard.state.healthAnswers
-  ctx.wizard.state.pointsData.tryRecipe = answers.tryRecipe ? PointMultipliers.tryRecipe : 0
   ctx.wizard.state.pointsData.goodSleep = answers.goodSleep ? PointMultipliers.goodSleep : 0
   ctx.wizard.state.pointsData.meditate = answers.meditate ? PointMultipliers.meditate : 0
   ctx.wizard.state.pointsData.lessAlc = answers.lessAlc ? PointMultipliers.lessAlc : 0
   const addedPoints = healthQuestions.reduce((sum, q) => {
     return sum + (answers[q.key] ? q.points : 0)
   }, 0)
-  ctx.wizard.state.pointsData.total += addedPoints;
+  ctx.wizard.state.pointsData.total += addedPoints
   await ctx.reply('Health-related responses recorded.')
   await ctx.wizard.steps[ctx.wizard.cursor](ctx)
   await ctx.answerCbQuery()
 })
 
 weekScoresWizard.action('health_skip', async (ctx) => {
-  Object.assign(ctx.wizard.state.pointsData, { tryRecipe: 0, goodSleep: 0, meditate: 0, lessAlc: 0 })
+  Object.assign(ctx.wizard.state.pointsData, { goodSleep: 0, meditate: 0, lessAlc: 0 })
   await ctx.reply('Health-related questions skipped.')
   await ctx.wizard.steps[ctx.wizard.cursor](ctx)
   await ctx.answerCbQuery()
@@ -228,13 +265,13 @@ weekScoresWizard.action('health_skip', async (ctx) => {
 
 weekScoresWizard.action('confirm_details', async (ctx) => {
   try {
-    const { pointsData } = ctx.wizard.state;
+    const { pointsData } = ctx.wizard.state
     const titlePadding = 26
     const valuePadding = 4
     let message = '*Summary of this week\'s points:*\n\n'
         message += formatList('Attended Sports Sessions', pointsData.sportsTurn > 0 ? pointsData.sportsTurn / PointMultipliers.sportsTurn : 'No', pointsData.sportsTurn > 0 ? titlePadding + 2 : titlePadding, valuePadding) + '\n'
         message += formatList('Tried a New Sport', pointsData.trySport ? 'Yes' : 'No', titlePadding, valuePadding) + '\n'
-        message += formatList('Tried a New Recipe', pointsData.tryRecipe ? 'Yes' : 'No', titlePadding, valuePadding) + '\n'
+        message += formatList('Tried New Recipes/Foods', pointsData.tryRecipe > 0 ? pointsData.tryRecipe / PointMultipliers.tryRecipe : 'No', pointsData.tryRecipe > 0 ? titlePadding + 2 : titlePadding, valuePadding) + '\n'
         message += formatList('Had Good Sleep', pointsData.goodSleep ? 'Yes' : 'No', titlePadding, valuePadding) + '\n'
         message += formatList('Meditated', pointsData.meditate ? 'Yes' : 'No', titlePadding, valuePadding) + '\n'
         message += formatList('Limited Alcohol', pointsData.lessAlc ? 'Yes' : 'No', titlePadding, valuePadding) + '\n\n'
@@ -290,16 +327,33 @@ weekScoresWizard.action(/^sports_(\d+)$/, async (ctx) => {
   const sportsPoints = sessions * PointMultipliers.sportsTurn
   ctx.wizard.state.pointsData.sportsTurn = sportsPoints
   ctx.wizard.state.pointsData.total += sportsPoints
-  await ctx.reply(
-    'Did you try a new sport or one you haven’t done in a while?',
-    Markup.inlineKeyboard([
-      Markup.button.callback('Yes', 'yes_new_sport'),
-      Markup.button.callback('No', 'no_new_sport'),
-      Markup.button.callback('Cancel & Exit', 'exit_wizard')
-    ])
-  )
+  await ctx.wizard.steps[ctx.wizard.cursor](ctx)
   await ctx.answerCbQuery()
-  return ctx.wizard.next()
+})
+
+weekScoresWizard.action(/^(yes|no)_recipe$/, async (ctx) => {
+  if (ctx.updateType === 'message') {
+    await ctx.reply('Please use the provided buttons to select an activity.')
+    return
+  }
+  ctx.wizard.state.extraRecipePending = ctx.match[1] === 'yes'
+  await ctx.editMessageReplyMarkup({})
+  await ctx.wizard.steps[ctx.wizard.cursor](ctx)
+  await ctx.answerCbQuery()
+})
+
+weekScoresWizard.action(/^recipe_(\d+)$/, async (ctx) => {
+  const count = parseInt(ctx.match[1], 10)
+  if (isNaN(count) || count < 0 || count > 8) {
+    await ctx.answerCbQuery('Invalid selection.')
+    return
+  }
+  await ctx.telegram.editMessageText(ctx.chat.id, ctx.wizard.state.recipeQuestionMessageId, null, `How many new recipes/foods did you try this week? ${count} selected.`)
+  const recipePoints = count * PointMultipliers.tryRecipe
+  ctx.wizard.state.pointsData.tryRecipe = recipePoints
+  ctx.wizard.state.pointsData.total += recipePoints
+  await ctx.wizard.steps[ctx.wizard.cursor](ctx)
+  await ctx.answerCbQuery()
 })
 
 module.exports = { weekScoresWizard }

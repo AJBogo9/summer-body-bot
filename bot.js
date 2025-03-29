@@ -27,6 +27,7 @@ const { teamRankingsScene } = require('./flows/statistics-flows/team-rankings')
 const { teamMemberRankingsScene } = require('./flows/statistics-flows/team-member-rankings')
 const { userSummaryScene } = require('./flows/statistics-flows/user-summary')
 const { guildStandingsScene } = require('./flows/statistics-flows/guild-standings')
+const { guildTopStandingsScene } = require('./flows/statistics-flows/guild-standings')
 const { guildComparisonScene } = require('./flows/statistics-flows/guild-comparison')
 const { topUsersScene } = require('./flows/statistics-flows/top-users')
 
@@ -50,6 +51,7 @@ const stage = new Scenes.Stage([
                 teamMemberRankingsScene,
                 userSummaryScene,
                 guildStandingsScene,
+                guildTopStandingsScene,
                 guildComparisonScene,
                 topUsersScene,
               ])
@@ -97,6 +99,7 @@ bot.command('leaderboards', (ctx) => { ctx.scene.enter('team_rankings_scene') })
 bot.command('team', (ctx) => { ctx.scene.enter('team_member_rankings_scene') })
 bot.command('summary', (ctx) => { ctx.scene.enter('user_summary_scene') })
 bot.command('topguilds', (ctx) => { ctx.scene.enter('guild_standings_scene') })
+bot.command('topguilds50', (ctx) => { ctx.scene.enter('guild_top_standings_scene') })
 bot.command('topguildsall', (ctx) => { ctx.scene.enter('guild_comparison_scene') })
 bot.command('topusers', (ctx) => { ctx.scene.enter('top_users_scene') })
 

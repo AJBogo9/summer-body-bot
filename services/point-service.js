@@ -139,6 +139,7 @@ const getGuildsLeaderboards = async () => {
       const averagePoints = item.count > 0 ? (item.totalPoints / item.count).toFixed(1) : 0
       return {
         guild: item._id,
+        count: item.count,
         average: averagePoints
       }
     })
@@ -147,6 +148,70 @@ const getGuildsLeaderboards = async () => {
   } catch (error) {
     console.error('Error occurred in getGuildsLeaderboards:', error)
     throw new Error('Error fetching guild average points')
+  }
+}
+
+const getGuildsTopLeaderboards = async () => {
+  try {
+    const guildAggregation = await User.aggregate([
+      {
+        $match: {
+          "points.total": { $gt: 0 },
+        },
+      },
+      {
+        $group: {
+          _id: "$guild",
+          pointsArray: { $push: "$points.total" },
+        },
+      },
+      {
+        $addFields: {
+          count: { $size: "$pointsArray" },
+        },
+      },
+      {
+        $match: {
+          count: { $gte: 3 },
+        },
+      },
+      {
+        $addFields: {
+          sortedPoints: { $sortArray: { input: "$pointsArray", sortBy: -1 } },
+        },
+      },
+      {
+        $addFields: {
+          topCount: { $ceil: { $divide: ["$count", 2] } },
+        },
+      },
+      {
+        $project: {
+          guild: "$_id",
+          count: 1,
+          topPoints: { $slice: ["$sortedPoints", "$topCount"] },
+        },
+      },
+      {
+        $project: {
+          guild: 1,
+          count: 1,
+          totalPoints: { $sum: "$topPoints" },
+          average: { $avg: "$topPoints" },
+        },
+      },
+    ])
+
+    const resultsWithAverage = guildAggregation.map(item => ({
+      guild: item.guild,
+      count: item.count,
+      average: item.average ? item.average.toFixed(1) : 0
+    }))
+
+    return resultsWithAverage
+  } catch (error) {
+    console.error(error)
+    throw error
   }
 }
 
@@ -194,5 +259,6 @@ module.exports = {
   getTeamMemberRankings,
   getUserSummary,
   getGuildsLeaderboards,
+  getGuildsTopLeaderboards,
   getGuildsTotals,
 }
