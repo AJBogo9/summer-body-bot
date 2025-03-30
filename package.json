@@ -1,18 +1,19 @@
 {
   "name": "summer-body-bot",
   "version": "1.0.0",
-  "description": "Telegram bot to manage CS guild's annual sports competition",
+  "description": "A Telegram bot for tracking competition scores among Aalto guilds and teams.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "populate": "node populateTestData.js",
+    "generate-stats": "node generateStatsPDF.js",
+    "generate-charts": "node generateCharts.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/EppuRuotsalainen/summer-body-bot.git"
   },
   "keywords": [
-    "mikmokki",
-    "yapping",
     "telegram",
     "telegram-bot",
     "telegraf",

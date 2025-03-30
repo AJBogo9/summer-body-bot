@@ -41,6 +41,14 @@ const userSchema = new mongoose.Schema({
 
 userSchema.index({ team: 1 })
 
+userSchema.methods.addPoints = async function(pointsData) {
+  Object.keys(pointsData).forEach(key => {
+    this.points[key] += pointsData[key]
+    if (key.toString() === 'sportsTurn') { user.lastSubmission = new Date() }
+  })
+  return this.save()
+}
+
 const User = mongoose.model('User', userSchema)
 
 User.validCategories = Object.keys(userSchema.obj.points)

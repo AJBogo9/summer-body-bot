@@ -1,4 +1,4 @@
-const { allowedDates } = require('../config')
+const { allowedDates } = require('../config/constants')
 
 const canAddPoints = async (lastSubmission) => {
   // Bypass weekly restriction in test mode

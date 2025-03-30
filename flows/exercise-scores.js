@@ -1,6 +1,7 @@
 const { Scenes, Markup } = require('telegraf')
 const pointService = require('../services/point-service')
 const userService = require('../services/user-service')
+const { isNotCallback } = require('../utils/flow-helpers')
 
 const kmActivities = [
   { key: 'running', label: 'running/walking', type: 'km', multiplier: 1, maxAllowed: 40 },
@@ -36,42 +37,30 @@ const sportsActivityWizard = new Scenes.WizardScene(
     return ctx.wizard.next()
   },
   async (ctx) => {
-    if (ctx.updateType === 'message') {
-      await ctx.reply('Please use the provided buttons to select an activity.');
-      return;
-    }
+    if (await isNotCallback(ctx)) return
 
     const exerciseType = ctx.callbackQuery.data.split('_')[1]
     ctx.wizard.state.exerciseType = exerciseType
     await ctx.editMessageReplyMarkup({})
     const activities = exerciseType === 'km' ? kmActivities : otherActivities
-    const prompt = exerciseType === 'km' 
-      ? 'Which activity did you complete?' 
-      : 'Which intensity did you perform?'
+    const prompt = exerciseType === 'km' ? 'Which activity did you complete?' : 'Which intensity did you perform?'
     const keyboard = activities.map(act => [Markup.button.callback(act.label.charAt(0).toUpperCase() + act.label.slice(1), `select_${exerciseType}_${act.key}`)])
     keyboard.push([Markup.button.callback('Cancel & Exit', 'exit_wizard')])
     await ctx.reply(prompt, Markup.inlineKeyboard(keyboard))
-    await ctx.answerCbQuery()
-    return ctx.wizard.next()
+        return ctx.wizard.next()
   },
   async (ctx) => {
-    if (ctx.updateType === 'message') {
-      await ctx.reply('Please use the provided buttons to select an activity.');
-      return;
-    }
+    if (await isNotCallback(ctx)) return
 
     const activity = ctx.wizard.state.selectedActivity
     if (!activity) {
       await ctx.reply('No activity selected. Please try again.')
       return ctx.scene.leave()
     }
-    const promptText =
-      activity.type === 'km'
-        ? `How many kilometres did you cover during ${activity.label}? (Enter a number)`
-        : `How many minutes did you spend on ${activity.label}? (Enter a number)`
-    const cancelKeyboard = Markup.inlineKeyboard([
-      Markup.button.callback('Cancel & Exit', 'exit_wizard')
-    ])
+    const promptText = activity.type === 'km'
+      ? `How many kilometres did you cover during ${activity.label}? (Enter a number)`
+      : `How many minutes did you spend on ${activity.label}? (Enter a number)`
+    const cancelKeyboard = Markup.inlineKeyboard([Markup.button.callback('Cancel & Exit', 'exit_wizard')])
     const msg = await ctx.reply(promptText, cancelKeyboard)
     ctx.wizard.state.numericPromptMsgId = msg.message_id
     return ctx.wizard.next()
@@ -153,8 +142,7 @@ sportsActivityWizard.action(/^select_(km|other)_(.+)$/, async (ctx) => {
   }
   ctx.wizard.state.selectedActivity = activity
   await ctx.editMessageReplyMarkup({})
-  await ctx.answerCbQuery()
-  return ctx.wizard.steps[ctx.wizard.cursor](ctx)
+    return ctx.wizard.steps[ctx.wizard.cursor](ctx)
 })
 
 sportsActivityWizard.action('exit_wizard', async (ctx) => {
@@ -166,8 +154,7 @@ sportsActivityWizard.action('exit_wizard', async (ctx) => {
 sportsActivityWizard.action('start_over', async (ctx) => {
   await ctx.editMessageText('Starting over!')
   ctx.wizard.selectStep(0)
-  await ctx.answerCbQuery()
-  return ctx.wizard.steps[0](ctx)
+    return ctx.wizard.steps[0](ctx)
 })
 
 module.exports = { sportsActivityWizard }

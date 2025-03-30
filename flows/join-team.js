@@ -2,6 +2,7 @@ const { Scenes, Markup } = require('telegraf')
 const teamService = require('../services/team-service')
 const userService = require('../services/user-service')
 const texts = require('../utils/texts')
+const { isNotCallback } = require('../utils/flow-helpers')
 
 const cancelAndExitKeyboard = Markup.inlineKeyboard([
   Markup.button.callback('Cancel', 'cancel')
@@ -18,9 +19,7 @@ const joinTeamWizard = new Scenes.WizardScene(
       return ctx.scene.leave()
     }
 
-    const teamExists = await teamService.getTeamById(user.team)
-
-    if (user && user.team && teamExists) {
+    if (user.team) {
       await ctx.reply(
         'You are already part of a team. By joining a new team, you will automatically leave your current team. ' +
         'If your current team is left with no members, it will be permanently removed. ' +
@@ -68,7 +67,7 @@ const joinTeamWizard = new Scenes.WizardScene(
           return ctx.scene.leave()
         } catch (_err) {
           await ctx.telegram.editMessageText(ctx.chat.id, ctx.wizard.state.questionMessageId, null, 'Please enter the ID of the team you wish to join.')
-          await ctx.reply('Invalid team ID format. Start over with /jointeam.')
+          await ctx.reply('Invalid team ID format. The ID is a 24 character hex string. Start over with /jointeam.')
           return ctx.scene.leave()
         }
       } else {
@@ -76,10 +75,7 @@ const joinTeamWizard = new Scenes.WizardScene(
         return ctx.wizard.selectStep(ctx.wizard.cursor)
       }
     } else {
-      if (ctx.updateType === 'message') {
-        await ctx.reply('Please use the provided buttons to select an activity.')
-        return
-      }
+      if (await isNotCallback(ctx)) return
       ctx.reply(texts.actions.error.error)
       return ctx.scene.leave()
     }
@@ -88,22 +84,15 @@ const joinTeamWizard = new Scenes.WizardScene(
 
 joinTeamWizard.action('confirm_join_team', async (ctx) => {
   ctx.wizard.state.confirmJoin = true
-  await ctx.answerCbQuery()
-  const userId = ctx.from.id
-  const user = await userService.findUser(userId)
+  const user = await userService.findUser(ctx.from.id)
   await teamService.leaveTeam(user._id, user.team)
   await ctx.editMessageReplyMarkup({})
-  const sentMessage = await ctx.reply('Please enter the ID of the team you wish to join.',
-    Markup.inlineKeyboard([
-        Markup.button.callback('Cancel', 'cancel')
-    ])
-  )
+  const sentMessage = await ctx.reply('Please enter the ID of the team you wish to join.', cancelAndExitKeyboard)
   ctx.wizard.state.questionMessageId = sentMessage.message_id
 })
 
 joinTeamWizard.action('cancel', async (ctx) => {
   ctx.wizard.state.confirmJoin = false
-  await ctx.answerCbQuery()
   await ctx.editMessageText('Joining team canceled. Start again with /jointeam.')
   return ctx.scene.leave()
 })

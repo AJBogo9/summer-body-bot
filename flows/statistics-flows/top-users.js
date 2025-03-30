@@ -2,6 +2,7 @@ const { Scenes } = require('telegraf')
 const User = require('../../models/user-model')
 const { formatList } = require('../../utils/format-list')
 const texts = require('../../utils/texts')
+const { emojis } = require('../../config/constants')
 
 // topusers command
 const topUsersScene = new Scenes.BaseScene('top_users_scene')
@@ -14,17 +15,16 @@ topUsersScene.enter(async (ctx) => {
     }
     
     let message = "*Top 15 Participants \\(total points\\)* ⭐\n\n"
+
     const titlePadding = 21
     const valuePadding = 6
-    
-    const emojis = ['⒈ ', '⒉ ', '⒊ ', '⒋ ', '⒌ ', '⒍ ', '⒎ ', '⒏ ', '⒐ ', '⒑ ', '⒒ ', '⒓ ', '⒔ ', '⒕ ', '⒖ ', '⒗ ', '⒘ ', '⒙ ', '⒚ ', '⒛ ']
 
     users.forEach((user, index) => {
       const emoji = index < emojis.length ? emojis[index] : `${index + 1}`
       message += emoji + formatList(user.name, user.points.total, titlePadding, valuePadding) + '\n'
     })
     
-    await ctx.reply(message, { parse_mode: 'MarkdownV2' })
+    await ctx.replyWithMarkdownV2(message)
     ctx.scene.leave()
   } catch (error) {
     console.error(error)

@@ -2,6 +2,7 @@ const { Scenes, Markup } = require('telegraf')
 const userService = require('../services/user-service')
 const teamService = require('../services/team-service')
 const texts = require('../utils/texts')
+const { isNotCallback } = require('../utils/flow-helpers')
 
 const deleteUserWizard = new Scenes.WizardScene(
   'delete_user_wizard',
@@ -24,24 +25,18 @@ const deleteUserWizard = new Scenes.WizardScene(
     return ctx.wizard.next()
   },
   async (ctx) => {
-    if (ctx.updateType === 'message') {
-      await ctx.reply('Please use the provided buttons to select an activity.');
-      return;
-    }
+    if (await isNotCallback(ctx)) return
   }
 )
 
 deleteUserWizard.action('confirm_delete', async (ctx) => {
-  await ctx.answerCbQuery()
-  const userId = ctx.from.id
-  const user = await userService.findUser(userId)
-  const teamExists = await teamService.getTeamById(user.team)
+  const user = await userService.findUser(ctx.from.id)
   try {
-    if (user && user.team && teamExists) { 
+    if (user.team) { 
       await teamService.leaveTeam(user._id, user.team) 
     }
-    const deletionResult = await userService.deleteUser(userId)
-    if (deletionResult.deletedCount === 0) {
+    const deletionResult = await userService.deleteUser(ctx.from.id)
+    if (!deletionResult) {
       await ctx.editMessageText('User not found or already deleted.')
     } else {
       await ctx.editMessageText('User deleted.')
@@ -54,7 +49,6 @@ deleteUserWizard.action('confirm_delete', async (ctx) => {
 })
 
 deleteUserWizard.action('cancel_delete', async (ctx) => { 
-  await ctx.answerCbQuery()
   await ctx.editMessageText('Deletion canceled.')
   return ctx.scene.leave()
 })

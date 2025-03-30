@@ -27,7 +27,22 @@ const teamSchema = new mongoose.Schema({
   },
 })
 
+teamSchema.methods.addUserPoints = async function(userPoints) {
+  Object.keys(userPoints).forEach(key => {
+    this.points[key] = (this.points[key] || 0) + userPoints[key]
+  })
+  return this.save()
+}
+
+teamSchema.methods.deleteUserPoints = async function(userPoints) {
+  Object.keys(userPoints).forEach(key => {
+    this.points[key] = (this.points[key] || 0) - userPoints[key]
+  })
+  return this.save()
+}
+
 teamSchema.index({ guild: 1, 'points.total': -1 })
 teamSchema.index({ _id: 1, 'points.total': -1 })
 
-module.exports = mongoose.model('Team', teamSchema)
+const Team = mongoose.model('Team', teamSchema)
+module.exports = Team

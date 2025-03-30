@@ -1,61 +1,15 @@
 const { Telegraf, Scenes, session } = require('telegraf')
 const { telegramToken, commands, responses, maxUsage } = require('./config')
+const flows = require('./flows')
 const https = require('https')
 
-const agent = new https.Agent({
-  keepAlive: false,
-})
-
-const bot = new Telegraf(telegramToken, {
-  telegram: { agent },
-})
-
-const { startWizard } = require('./flows/information-flows/start')
-const { howToGetPoints } = require('./flows/information-flows/how-to-points')
-const { statsInfoScene } = require('./flows/information-flows/stats-info')
-const { helpScene } = require('./flows/information-flows/help')
-const { termsScene } = require('./flows/information-flows/terms')
-
-const { deleteUserWizard } = require('./flows/delete-user')
-const { registerWizard } = require('./flows/register')
-const { createTeamWizard } = require('./flows/create-team')
-const { joinTeamWizard } = require('./flows/join-team')
-const { weekScoresWizard } = require('./flows/week-scores')
-const { sportsActivityWizard } = require('./flows/exercise-scores')
-
-const { teamRankingsScene } = require('./flows/statistics-flows/team-rankings')
-const { teamMemberRankingsScene } = require('./flows/statistics-flows/team-member-rankings')
-const { userSummaryScene } = require('./flows/statistics-flows/user-summary')
-const { guildStandingsScene } = require('./flows/statistics-flows/guild-standings')
-const { guildTopStandingsScene } = require('./flows/statistics-flows/guild-standings')
-const { guildComparisonScene } = require('./flows/statistics-flows/guild-comparison')
-const { topUsersScene } = require('./flows/statistics-flows/top-users')
+const agent = new https.Agent({ keepAlive: false })
+const bot = new Telegraf(telegramToken, { telegram: { agent } })
 
 const onlyPrivate = require('./utils/check-private')
-
 const texts = require('./utils/texts')
 
-const stage = new Scenes.Stage([
-                startWizard,
-                howToGetPoints,
-                statsInfoScene,
-                helpScene,
-                termsScene,
-                deleteUserWizard,
-                registerWizard,
-                createTeamWizard,
-                joinTeamWizard,
-                weekScoresWizard,
-                sportsActivityWizard,
-                teamRankingsScene,
-                teamMemberRankingsScene,
-                userSummaryScene,
-                guildStandingsScene,
-                guildTopStandingsScene,
-                guildComparisonScene,
-                topUsersScene,
-              ])
-
+const stage = new Scenes.Stage(Object.values(flows))
 bot.use(session())
 bot.use(stage.middleware())
 

@@ -61,15 +61,8 @@ guildComparisonScene.enter(async (ctx) => {
     })
 
     const healthStandings = validStandings.map(guild => {
-      const healthPoints =
-        (guild.tryRecipe.total || 0) +
-        (guild.goodSleep.total || 0) +
-        (guild.meditate.total || 0) +
-        (guild.lessAlc.total || 0)
-      return {
-        guild: guild.guild,
-        healthPoints
-      }
+      const healthPoints = (guild.tryRecipe.total || 0) + (guild.goodSleep.total || 0) + (guild.meditate.total || 0) + (guild.lessAlc.total || 0)
+      return { guild: guild.guild, healthPoints }
     })
 
     const topHealth = [...healthStandings]
@@ -82,7 +75,7 @@ guildComparisonScene.enter(async (ctx) => {
     })
     message += '\n'
 
-    await ctx.reply(message, { parse_mode: 'MarkdownV2' })
+    await ctx.replyWithMarkdownV2(message)
     ctx.scene.leave()
   } catch (error) {
     await ctx.reply(texts.actions.error.error)

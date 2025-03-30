@@ -10,16 +10,16 @@ const formatList = (title, text, titlePadding, valuePadding, unit = '') => {
     title = title.padEnd(titlePadding, ' ')
     text = text.toString().padStart(valuePadding, ' ')
     const formattedUnit = unit ? ` ${unit}` : ''
-    const escapedTitle = escapeMarkdownV2(title)
-    const escapedText = escapeMarkdownV2(text)
+    const escapedTitle = escapeMarkdown(title)
+    const escapedText = escapeMarkdown(text)
     return `\`${escapedTitle}${escapedText}\`${formattedUnit}`
 }
 
-const escapeMarkdownV2 = (text) => {
+const escapeMarkdown = (text) => {
     if (typeof text === 'number') { text = formatNumber(text) } 
     else if (typeof text === 'string' && !isNaN(text) && text.trim() !== '') { text = formatNumber(parseFloat(text)) }
 
-    return text.replace(/[_*[\]()~`>#+-=|{}.!\\]/g, (x) => '\\' + x)
+    return text.replace(/[[\]()~`>#+-=|{}.!\\]/g, (x) => '\\' + x)
 }
 
-module.exports = { formatList, escapeMarkdownV2 }
+module.exports = { formatList, escapeMarkdown }

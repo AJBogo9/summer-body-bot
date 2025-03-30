@@ -4,26 +4,12 @@ const User = require('../models/user-model')
 const addPoints = async (userId, pointsData) => {
   try {
     const user = await User.findOne({ userId: userId })
-    if (!user) {
-      throw new Error('User not found')
+    if (!user) throw new Error('User not found')
+    await user.addPoints(pointsData)
+    if (user.team) {
+      const team = await Team.findById(user.team)
+      if (team) { await team.addUserPoints(pointsData) }
     }
-
-    const team = await Team.findById(user.team)
-
-    Object.keys(pointsData).forEach((key) => {
-      user.points[key] += pointsData[key]
-      if (key.toString() === 'sportsTurn') { user.lastSubmission = new Date() }
-    })
-
-    await user.save()
-    
-    if (team) {
-      Object.keys(pointsData).forEach((key) => {
-        team.points[key] += pointsData[key]
-      })
-      await team.save()
-    }
-
     return user
   } catch (error) {
     console.error('Error occurred in addPoints:', error)
@@ -69,21 +55,14 @@ const getTeamRankings = async () => {
 const getTeamMemberRankings = async (userId) => {
   try {
     const user = await User.findOne({ userId: userId })
-    if (!user) {
-      throw new Error('User not found')
-    }
-
-    const team = await Team.find({ _id: user.team })
-    if (!team) {
-      throw new Error('Team not found')
-    }
-    const teamName = team[0].name
-    
+    if (!user) throw new Error('User not found')
+    const team = await Team.findById(user.team)
+    if (!team) throw new Error('Team not found')
     const teamMembers = await User.find({ team: user.team }).sort({ 'points.total': -1 })
     return teamMembers.map(member => ({
       name: member.name,
       totalPoints: member.points.total,
-      teamName: teamName
+      teamName: team.name
     }))
   } catch (error) {
     console.error('Error occurred in getTeamMemberRankings:', error)
@@ -94,10 +73,7 @@ const getTeamMemberRankings = async (userId) => {
 const getUserSummary = async (userId) => {
   try {
     const user = await User.findOne({ userId: userId })
-    if (!user) {
-      throw new Error('User not found')
-    }
-
+    if (!user) throw new Error('User not found')
     return user.points
   } catch (error) {
     console.error('Error occurred in getUserSummary:', error)
@@ -134,17 +110,11 @@ const getGuildsLeaderboards = async () => {
         },
       },
     ])
-
-    const resultsWithAverage = guildAggregation.map(item => {
-      const averagePoints = item.count > 0 ? (item.totalPoints / item.count).toFixed(1) : 0
-      return {
-        guild: item._id,
-        count: item.count,
-        average: averagePoints
-      }
-    })
-
-    return resultsWithAverage
+    return guildAggregation.map(item => ({
+      guild: item._id,
+      count: item.count,
+      average: item.count > 0 ? (item.totalPoints / item.count).toFixed(1) : 0,
+    }));
   } catch (error) {
     console.error('Error occurred in getGuildsLeaderboards:', error)
     throw new Error('Error fetching guild average points')
@@ -201,17 +171,14 @@ const getGuildsTopLeaderboards = async () => {
         },
       },
     ])
-
-    const resultsWithAverage = guildAggregation.map(item => ({
+    return guildAggregation.map(item => ({
       guild: item.guild,
       count: item.count,
-      average: item.average ? item.average.toFixed(1) : 0
+      average: item.average ? item.average.toFixed(1) : 0,
     }))
-
-    return resultsWithAverage
   } catch (error) {
-    console.error(error)
-    throw error
+    console.error('Error occurred in getTopGuildsLeaderboards:', error)
+    throw new Error('Error fetching guild average points')
   }
 }
 
@@ -243,7 +210,7 @@ const getGuildsTotals = async () => {
       categories.forEach(category => {
         const total = guildData[category].total
         const count = guildData.participants
-        guildData[category].average = count > 0 ? (total / count).toFixed(1) : "0"
+        guildData[category].average = count > 0 ? (total / count).toFixed(1) : 0
       })
     }
     return Object.values(guilds)

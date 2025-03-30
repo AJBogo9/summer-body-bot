@@ -2,6 +2,7 @@ const { Scenes } = require('telegraf')
 const pointService = require('../../services/point-service')
 const texts = require('../../utils/texts')
 const { formatList } = require('../../utils/format-list')
+const { emojis } = require('../../config/constants')
 
 // topguilds command
 const guildStandingsScene = new Scenes.BaseScene('guild_standings_scene')
@@ -19,15 +20,12 @@ guildStandingsScene.enter(async (ctx) => {
     const guildPadding = 15
     const pointPadding = 6
 
-    const emojis = ['🥇', '🥈', '🥉', ' ⒋ ', ' ⒌ ', ' ⒍ ', ' ⒎ ', ' ⒏ ', ' ⒐ ', ' ⒑ ', ' ⒒ ', ' ⒓ ', ' ⒔ ', ' ⒕ ', ' ⒖ ', ' ⒗ ', ' ⒘ ', ' ⒙ ', ' ⒚ ', ' ⒛ ']
-
     averages.forEach((guild, index) => {
-      const pointsText = guild.average.toString()
       const emoji = index < emojis.length ? emojis[index] : `${index + 1}`
-      message += emoji + formatList(guild.guild, pointsText, guildPadding, pointPadding) + '\n'
+      message += emoji + formatList(guild.guild, guild.average, guildPadding, pointPadding) + '\n'
     })
 
-    await ctx.reply(message, { parse_mode: 'MarkdownV2' })
+    await ctx.replyWithMarkdownV2(message)
     ctx.scene.leave()
   } catch (error) {
     await ctx.reply(texts.actions.error.error)
@@ -52,15 +50,12 @@ guildTopStandingsScene.enter(async (ctx) => {
     const guildPadding = 15
     const pointPadding = 6
 
-    const emojis = ['🥇', '🥈', '🥉', ' ⒋ ', ' ⒌ ', ' ⒍ ', ' ⒎ ', ' ⒏ ', ' ⒐ ', ' ⒑ ', ' ⒒ ', ' ⒓ ', ' ⒔ ', ' ⒕ ', ' ⒖ ', ' ⒗ ', ' ⒘ ', ' ⒙ ', ' ⒚ ', ' ⒛ ']
-
     averages.forEach((guild, index) => {
-      const pointsText = guild.average.toString()
       const emoji = index < emojis.length ? emojis[index] : `${index + 1}`
-      message += emoji + formatList(guild.guild, pointsText, guildPadding, pointPadding) + '\n'
+      message += emoji + formatList(guild.guild, guild.average.toString(), guildPadding, pointPadding) + '\n'
     })
 
-    await ctx.reply(message, { parse_mode: 'MarkdownV2' })
+    await ctx.replyWithMarkdownV2(message)
     ctx.scene.leave()
   } catch (error) {
     await ctx.reply(texts.actions.error.error)
