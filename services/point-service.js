@@ -1,6 +1,9 @@
 const Team = require('../models/team-model')
 const User = require('../models/user-model')
 
+/**
+ * Adds points to a user and updates the user's team if one exists.
+ */
 const addPoints = async (userId, pointsData) => {
   try {
     const user = await User.findOne({ userId: userId })
@@ -8,7 +11,9 @@ const addPoints = async (userId, pointsData) => {
     await user.addPoints(pointsData)
     if (user.team) {
       const team = await Team.findById(user.team)
-      if (team) { await team.addUserPoints(pointsData) }
+      if (team) {
+        await team.addUserPoints(pointsData)
+      }
     }
     return user
   } catch (error) {
@@ -17,9 +22,19 @@ const addPoints = async (userId, pointsData) => {
   }
 }
 
+/**
+ * Retrieves team rankings by aggregating user points.
+ * The pipeline:
+ * 1. Filters for users with non-zero total points and a team.
+ * 2. Groups by team and computes the sum, count, and average of total points.
+ * 3. Filters out teams with fewer than 3 participants.
+ * 4. Looks up team information.
+ * 5. Projects the team name and rounded average points.
+ * 6. Sorts by average points descending and limits to the top 15.
+ */
 const getTeamRankings = async () => {
   try {
-    const rankings = await User.aggregate([
+    const pipeline = [
       { $match: { "points.total": { $gt: 0 }, team: { $ne: null } } },
       { $group: {
           _id: "$team",
@@ -43,15 +58,19 @@ const getTeamRankings = async () => {
       }},
       { $sort: { averagePointsPerMember: -1 } },
       { $limit: 15 }
-    ]);
+    ]
 
-    return rankings;
+    const rankings = await User.aggregate(pipeline)
+    return rankings
   } catch (error) {
-    console.error('Error occurred in getTeamRankings:', error);
-    throw new Error('Error fetching team rankings');
+    console.error('Error occurred in getTeamRankings:', error)
+    throw new Error('Error fetching team rankings')
   }
-};
+}
 
+/**
+ * Retrieves rankings of team members for the team to which the user belongs.
+ */
 const getTeamMemberRankings = async (userId) => {
   try {
     const user = await User.findOne({ userId: userId })
@@ -70,6 +89,9 @@ const getTeamMemberRankings = async (userId) => {
   }
 }
 
+/**
+ * Retrieves a summary of a user's points.
+ */
 const getUserSummary = async (userId) => {
   try {
     const user = await User.findOne({ userId: userId })
@@ -81,96 +103,76 @@ const getUserSummary = async (userId) => {
   }
 }
 
+/**
+ * Retrieves guild leaderboards by aggregating users by guild.
+ * The pipeline:
+ * 1. Filters for users with a positive total.
+ * 2. Groups by guild and computes total points and count.
+ * 3. Filters out guilds with fewer than 3 participants.
+ * 4. Maps results to include the average (totalPoints/count) rounded to 1 decimal.
+ */
 const getGuildsLeaderboards = async () => {
   try {
-    const guildAggregation = await User.aggregate([
-      {
-        $match: {
-          "points.total": {
-            $gt: 0,
-          },
-        },
-      },
-      {
-        $group: {
+    const pipeline = [
+      { $match: { "points.total": { $gt: 0 } } },
+      { $group: {
           _id: "$guild",
-          totalPoints: {
-            $sum: "$points.total",
-          },
-          count: {
-            $sum: 1,
-          },
-        },
-      },
-      {
-        $match: {
-          count: {
-            $gte: 3,
-          },
-        },
-      },
-    ])
+          totalPoints: { $sum: "$points.total" },
+          count: { $sum: 1 }
+      }},
+      { $match: { count: { $gte: 3 } } }
+    ]
+
+    const guildAggregation = await User.aggregate(pipeline)
     return guildAggregation.map(item => ({
       guild: item._id,
       count: item.count,
       average: item.count > 0 ? (item.totalPoints / item.count).toFixed(1) : 0,
-    }));
+    }))
   } catch (error) {
     console.error('Error occurred in getGuildsLeaderboards:', error)
     throw new Error('Error fetching guild average points')
   }
 }
 
+/**
+ * Retrieves guild top leaderboards based on the top 50% of scores.
+ * The pipeline:
+ * 1. Filters for users with positive total points.
+ * 2. Groups by guild, pushing each user's total into an array.
+ * 3. Adds a count field.
+ * 4. Filters out guilds with fewer than 3 participants.
+ * 5. Sorts the points array in descending order.
+ * 6. Computes topCount = ceil(count/2) and slices the sorted array.
+ * 7. Projects the sum and average of the top points.
+ * 8. Maps the result to include rounded averages.
+ */
 const getGuildsTopLeaderboards = async () => {
   try {
-    const guildAggregation = await User.aggregate([
-      {
-        $match: {
-          "points.total": { $gt: 0 },
-        },
-      },
-      {
-        $group: {
+    const pipeline = [
+      { $match: { "points.total": { $gt: 0 } } },
+      { $group: {
           _id: "$guild",
           pointsArray: { $push: "$points.total" },
-        },
-      },
-      {
-        $addFields: {
-          count: { $size: "$pointsArray" },
-        },
-      },
-      {
-        $match: {
-          count: { $gte: 3 },
-        },
-      },
-      {
-        $addFields: {
-          sortedPoints: { $sortArray: { input: "$pointsArray", sortBy: -1 } },
-        },
-      },
-      {
-        $addFields: {
-          topCount: { $ceil: { $divide: ["$count", 2] } },
-        },
-      },
-      {
-        $project: {
+      }},
+      { $addFields: { count: { $size: "$pointsArray" } } },
+      { $match: { count: { $gte: 3 } } },
+      { $addFields: { sortedPoints: { $sortArray: { input: "$pointsArray", sortBy: -1 } } } },
+      { $addFields: { topCount: { $ceil: { $divide: ["$count", 2] } } } },
+      { $project: {
           guild: "$_id",
           count: 1,
           topPoints: { $slice: ["$sortedPoints", "$topCount"] },
-        },
-      },
-      {
-        $project: {
+      }},
+      { $project: {
           guild: 1,
           count: 1,
           totalPoints: { $sum: "$topPoints" },
           average: { $avg: "$topPoints" },
-        },
-      },
-    ])
+      }},
+    ]
+
+    const guildAggregation = await User.aggregate(pipeline)
     return guildAggregation.map(item => ({
       guild: item.guild,
       count: item.count,
@@ -182,38 +184,58 @@ const getGuildsTopLeaderboards = async () => {
   }
 }
 
+/**
+ * Retrieves guild totals and averages for every category.
+ * This function uses dynamic aggregation so that if the valid categories change,
+ * the pipeline automatically adjusts.
+ *
+ * The pipeline:
+ * 1. Filters for users with positive total points.
+ * 2. Groups by guild and computes the sum for each category (dynamically built).
+ * 3. Projects a structure with the guild, number of participants, and for each category:
+ *    - The total points and the average (rounded to 1 decimal).
+ */
 const getGuildsTotals = async () => {
   try {
     const categories = User.validCategories
-    const allGuilds = User.validGuilds
 
-    const guilds = {}
-    allGuilds.forEach(guildName => {
-      guilds[guildName] = { guild: guildName, participants: 0 }
-      categories.forEach(category => {
-        guilds[guildName][category] = { total: 0, average: 0 }
-      })
+    // Build the sum fields for the $group stage dynamically.
+    const sumFields = {}
+    categories.forEach(category => {
+      sumFields[`${category}Total`] = { $sum: `$points.${category}` }
     })
 
-    const users = await User.find({ "points.total": { $gt: 0 } })
-    users.forEach(user => {
-      if (guilds[user.guild]) {
-        guilds[user.guild].participants += 1
-        categories.forEach(category => {
-          guilds[user.guild][category].total += user.points[category] || 0
-        })
+    // Build the projection for the $project stage dynamically.
+    const projectFields = {
+      guild: "$_id",
+      participants: 1,
+      _id: 0,
+    }
+    categories.forEach(category => {
+      projectFields[category] = {
+        total: `$${category}Total`,
+        average: {
+          $cond: [
+            { $gt: ["$participants", 0] },
+            { $round: [{ $divide: [`$${category}Total`, "$participants"] }, 1] },
+            0
+          ]
+        }
       }
     })
 
-    for (const guildName in guilds) {
-      const guildData = guilds[guildName]
-      categories.forEach(category => {
-        const total = guildData[category].total
-        const count = guildData.participants
-        guildData[category].average = count > 0 ? (total / count).toFixed(1) : 0
-      })
-    }
-    return Object.values(guilds)
+    const pipeline = [
+      { $match: { "points.total": { $gt: 0 } } },
+      { $group: {
+          _id: "$guild",
+          participants: { $sum: 1 },
+          ...sumFields
+      }},
+      { $project: projectFields }
+    ]
+
+    const results = await User.aggregate(pipeline)
+    return results
   } catch (error) {
     console.error('Error occurred in getGuildsTotals:', error)
     throw new Error('Error fetching guild totals with averages and participant counts')
