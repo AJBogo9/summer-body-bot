@@ -1,22 +1,8 @@
 const { Scenes, Markup } = require('telegraf')
 const pointService = require('../services/point-service')
 const userService = require('../services/user-service')
+const { kmActivities, otherActivities } = require('../config/multipliers')
 const { isNotCallback } = require('../utils/flow-helpers')
-
-const kmActivities = [
-  { key: 'running', label: 'running/walking', type: 'km', multiplier: 1, maxAllowed: 40 },
-  { key: 'cycling', label: 'cycling', type: 'km', multiplier: 0.25, maxAllowed: 100 },
-  { key: 'swimming', label: 'swimming', type: 'km', multiplier: 4, maxAllowed: 10 },
-  { key: 'rowing', label: 'rowing', type: 'km', multiplier: 1, maxAllowed: 25 },
-  { key: 'ice_skating', label: 'ice skating', type: 'km', multiplier: 0.25, maxAllowed: 50 },
-  { key: 'skiing', label: 'skiing', type: 'km', multiplier: 0.5, maxAllowed: 50 },
-]
-
-const otherActivities = [
-  { key: 'low', label: 'low intensity training', type: 'hours', multiplier: 2, maxAllowed: 6 },
-  { key: 'moderate', label: 'moderate intensity training', type: 'hours', multiplier: 4, maxAllowed: 5 },
-  { key: 'vigorous', label: 'vigorous intensity training', type: 'hours', multiplier: 8, maxAllowed: 4 },
-]
 
 const sportsActivityWizard = new Scenes.WizardScene(
   'sports_activity_wizard',
@@ -47,7 +33,7 @@ const sportsActivityWizard = new Scenes.WizardScene(
     const keyboard = activities.map(act => [Markup.button.callback(act.label.charAt(0).toUpperCase() + act.label.slice(1), `select_${exerciseType}_${act.key}`)])
     keyboard.push([Markup.button.callback('Cancel & Exit', 'exit_wizard')])
     await ctx.reply(prompt, Markup.inlineKeyboard(keyboard))
-        return ctx.wizard.next()
+    return ctx.wizard.next()
   },
   async (ctx) => {
     if (await isNotCallback(ctx)) return
@@ -145,7 +131,7 @@ sportsActivityWizard.action(/^select_(km|other)_(.+)$/, async (ctx) => {
   }
   ctx.wizard.state.selectedActivity = activity
   await ctx.editMessageReplyMarkup({})
-    return ctx.wizard.steps[ctx.wizard.cursor](ctx)
+  return ctx.wizard.steps[ctx.wizard.cursor](ctx)
 })
 
 sportsActivityWizard.action('exit_wizard', async (ctx) => {
@@ -157,7 +143,7 @@ sportsActivityWizard.action('exit_wizard', async (ctx) => {
 sportsActivityWizard.action('start_over', async (ctx) => {
   await ctx.editMessageText('Starting over!')
   ctx.wizard.selectStep(0)
-    return ctx.wizard.steps[0](ctx)
+  return ctx.wizard.steps[0](ctx)
 })
 
 module.exports = { sportsActivityWizard }

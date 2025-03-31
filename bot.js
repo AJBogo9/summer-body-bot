@@ -13,6 +13,8 @@ const stage = new Scenes.Stage(Object.values(flows))
 bot.use(session())
 bot.use(stage.middleware())
 
+/// Middleware for restricting available commands ///
+
 /*const allowedCommands = ['start', 'register', 'jointeam', 'createteam', 'rmuser', 'team', 'terms']
 
 bot.use(async (ctx, next) => {
@@ -26,14 +28,14 @@ bot.use(async (ctx, next) => {
         } catch (error) {
           console.error('Error deleting message:', error)
         }
-        return;
+        return
       } else {
         return ctx.reply('Competition hasn’t started yet, use /register to register to the competition.')
       }
     }
   }
   await next()
-});*/
+})*/
 
 bot.command('help', (ctx) => { ctx.scene.enter('help_scene') })
 
@@ -48,6 +50,8 @@ bot.command('createteam', onlyPrivate, (ctx) => { ctx.scene.enter('create_team_w
 bot.command('jointeam', onlyPrivate, (ctx) => { ctx.scene.enter('join_team_wizard') })
 bot.command('weekscores', onlyPrivate, (ctx) => { ctx.scene.enter('week_scores_wizard') })
 bot.command('addexercise', onlyPrivate, (ctx) => { ctx.scene.enter('sports_activity_wizard') })
+
+bot.command('adjustpoints', onlyPrivate, (ctx) => { ctx.scene.enter('adjust_points_wizard') })
 
 bot.command('leaderboards', (ctx) => { ctx.scene.enter('team_rankings_scene') })
 bot.command('team', (ctx) => { ctx.scene.enter('team_member_rankings_scene') })

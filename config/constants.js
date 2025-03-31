@@ -18,4 +18,5 @@ module.exports = {
   responses: responses,
   emojis: ['🥇', '🥈', '🥉', ' ⒋ ', ' ⒌ ', ' ⒍ ', ' ⒎ ', ' ⒏ ', ' ⒐ ', ' ⒑ ', ' ⒒ ', ' ⒓ ', ' ⒔ ', ' ⒕ ', ' ⒖ ', ' ⒗ ', ' ⒘ ', ' ⒙ ', ' ⒚ ', ' ⒛ '],
   Error: "Something went wrong. Please try again later or contact support.",
+  adminIds: process.env.ADMINS ? process.env.ADMINS.split(',').map(id => id.trim()) : []
 }

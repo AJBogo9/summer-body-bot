@@ -1,5 +1,6 @@
 const Team = require('../models/team-model')
 const User = require('../models/user-model')
+const { PointMultipliers, kmActivities, otherActivities } = require('../config/multipliers')
 
 /**
  * Adds points to a user and updates the user's team if one exists.
@@ -19,6 +20,61 @@ const addPoints = async (userId, pointsData) => {
   } catch (error) {
     console.error('Error occurred in addPoints:', error)
     throw new Error('Error adding points')
+  }
+}
+
+const adjustPoints = async (username, category, quantity, extra = {}) => {
+  try {
+    const user = await User.findOne({ username })
+    if (!user) throw new Error('User not found')
+    let multiplier = 1
+    if (category === 'exercise') {
+      const { activityType, activityKey } = extra
+      if (!activityType || !activityKey) {
+        throw new Error('For exercise adjustments, please provide both activityType ("km" or "other") and activityKey')
+      }
+      let activityArray
+      if (activityType === 'km') {
+        activityArray = kmActivities
+      } else if (activityType === 'other') {
+        activityArray = otherActivities
+      } else {
+        throw new Error('Invalid activityType. Use "km" or "other".')
+      }
+      const activity = activityArray.find(act => act.key === activityKey)
+      if (!activity) throw new Error('Activity not found')
+      multiplier = activity.multiplier
+    } else {
+      if (PointMultipliers.hasOwnProperty(category)) {
+        multiplier = PointMultipliers[category]
+      } else {
+        throw new Error(`Category "${category}" is not supported for adjustment`)
+      }
+    }
+
+    const deltaPoints = quantity * multiplier
+
+    const oldValue = user.points[category] || 0
+    const newValue = Math.max(0, oldValue + deltaPoints)
+    const diff = newValue - oldValue
+    user.points[category] = newValue
+    user.points.total = Math.max(0, (user.points.total || 0) + diff)
+    await user.save()
+
+    if (user.team) {
+      const team = await Team.findById(user.team)
+      if (team) {
+        const oldTeamValue = team.points[category] || 0
+        const newTeamValue = Math.max(0, oldTeamValue + diff)
+        team.points[category] = newTeamValue
+        team.points.total = Math.max(0, (team.points.total || 0) + diff)
+        await team.save()
+      }
+    }
+    return user
+  } catch (error) {
+    console.error('Error occurred in adjustPoints:', error)
+    throw new Error('Error adjusting points')
   }
 }
 
@@ -244,6 +300,7 @@ const getGuildsTotals = async () => {
 
 module.exports = {
   addPoints,
+  adjustPoints,
   getTeamRankings,
   getTeamMemberRankings,
   getUserSummary,

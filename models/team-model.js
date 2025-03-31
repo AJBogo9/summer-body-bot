@@ -27,14 +27,14 @@ const teamSchema = new mongoose.Schema({
   },
 })
 
-teamSchema.methods.addUserPoints = async function(userPoints) {
+teamSchema.methods.addUserPoints = function(userPoints) {
   Object.keys(userPoints).forEach(key => {
     this.points[key] = (this.points[key] || 0) + userPoints[key]
   })
   return this.save()
 }
 
-teamSchema.methods.deleteUserPoints = async function(userPoints) {
+teamSchema.methods.deleteUserPoints = function(userPoints) {
   Object.keys(userPoints).forEach(key => {
     this.points[key] = (this.points[key] || 0) - userPoints[key]
   })

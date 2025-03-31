@@ -6,26 +6,8 @@ const userService = require('../services/user-service')
 const texts = require('../utils/texts')
 const canAddPoints = require('../utils/can-add-points')
 const { formatList } = require('../utils/format-list')
+const { PointMultipliers, DefaultPoints } = require('../config/multipliers')
 const { isNotCallback } = require('../utils/flow-helpers')
-
-const PointMultipliers = {
-  sportsTurn: 5,
-  trySport: 5,
-  tryRecipe: 5, // VegeAppro theme week --> can be chosen many times
-  goodSleep: 8, 
-  meditate: 5,
-  lessAlc: 10,  
-}
-
-const DefaultPoints = {
-  sportsTurn: 0,
-  trySport: 0,
-  tryRecipe: 0,
-  goodSleep: 0,
-  lessAlc: 0,
-  meditate: 0,
-  total: 0,
-}
 
 const healthQuestions = [
   { key: 'goodSleep', label: 'Good Sleep', points: PointMultipliers.goodSleep },
@@ -235,7 +217,7 @@ weekScoresWizard.action('health_next', async (ctx) => {
     'Please select which of the following health-related activities you did this week:',
     Markup.inlineKeyboard(keyboard)
   )
-  })
+})
 
 weekScoresWizard.action(/toggle_(.+)/, async (ctx) => {
   if (await isNotCallback(ctx)) return
@@ -254,7 +236,7 @@ weekScoresWizard.action(/toggle_(.+)/, async (ctx) => {
     'Please select which of the following health-related activities you did this week:',
     Markup.inlineKeyboard(keyboard)
   )
-  })
+})
 
 weekScoresWizard.action('health_submit', async (ctx) => {
   if (await isNotCallback(ctx)) return
@@ -267,13 +249,13 @@ weekScoresWizard.action('health_submit', async (ctx) => {
   ctx.wizard.state.pointsData.total += addedPoints
   await ctx.reply('Health-related responses recorded.')
   await ctx.wizard.steps[ctx.wizard.cursor](ctx)
-  })
+})
 
 weekScoresWizard.action('health_skip', async (ctx) => {
   Object.assign(ctx.wizard.state.pointsData, { goodSleep: 0, meditate: 0, lessAlc: 0 })
   await ctx.reply('Health-related questions skipped.')
   await ctx.wizard.steps[ctx.wizard.cursor](ctx)
-  })
+})
 
 weekScoresWizard.action('confirm_details', async (ctx) => {
   try {
