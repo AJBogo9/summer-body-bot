@@ -39,7 +39,7 @@ deleteUserWizard.action('confirm_delete', async (ctx) => {
     if (!deletionResult) {
       await ctx.editMessageText('User not found or already deleted.')
     } else {
-      await ctx.editMessageText('User deleted.')
+      await ctx.editMessageText('User deleted. You can register again using /register.')
     }
   } catch (error) {
     await ctx.reply(texts.actions.error.error)
