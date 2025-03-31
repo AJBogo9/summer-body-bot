@@ -13,7 +13,6 @@ const connectDatabase = async () => {
 
 const disconnectDatabase = async () => {
   try {
-    // Disconnect from MongoDB
     await mongoose.disconnect()
     console.log('MongoDB disconnected')
   } catch (error) {

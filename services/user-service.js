@@ -54,41 +54,26 @@ const addUserToTeam = async (userId, teamId) => {
   }
 }
 
-/*const getGuildsTotalsWithParticipants = async () => {
-  try {
-    const guildsWithParticipants = await User.aggregate([
-      { $group: { _id: "$guild", count: { $sum: 1 } } }
-    ])
-
-    const guildsTotals = await pointService.getGuildsTotals()
-
-    const standings = guildsTotals.map(guild => {
-      const participantCount = guildsWithParticipants.find(g => g._id === guild.guild)?.count || 0
-      return { ...guild, participants: participantCount }
-    })
-
-    return standings
-  } catch (error) {
-    console.error('Error occurred in getGuildsTotalsWithParticipants:', error)
-    return []
-  }
-}*/
-
 const sendReminder = async (bot) => {
   const users = await getAllUsers()
   const today = new Date().toISOString().split('T')[0]
-  users.forEach((user) => {
+  for (const user of users) {
     if (!user.lastSubmission || user.lastSubmission.toISOString().split('T')[0] !== today) {
-      bot.telegram.sendMessage(user.userId, reminderMessage)
-        .catch((err) => console.error(`Error sending reminder to ${user.userId}:`, err))
+      try {
+        const chat = await bot.telegram.getChat(user.userId)
+        if (chat) {
+          await bot.telegram.sendMessage(user.userId, reminderMessage)
+        }
+      } catch (err) {
+        console.error(`Error sending reminder to ${user.username}:`, err)
+      }
     }
-  })
+  }
 }
 
 module.exports = {
   createUser,
   getAllUsers,
-  //getGuildsTotalsWithParticipants,
   deleteUser,
   findUser,
   addUserToTeam,

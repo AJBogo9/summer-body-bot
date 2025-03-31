@@ -10,13 +10,13 @@ const kmActivities = [
   { key: 'rowing', label: 'rowing', type: 'km', multiplier: 1, maxAllowed: 25 },
   { key: 'ice_skating', label: 'ice skating', type: 'km', multiplier: 0.25, maxAllowed: 50 },
   { key: 'skiing', label: 'skiing', type: 'km', multiplier: 0.5, maxAllowed: 50 },
-];
+]
 
 const otherActivities = [
   { key: 'low', label: 'low intensity training', type: 'hours', multiplier: 2, maxAllowed: 6 },
   { key: 'moderate', label: 'moderate intensity training', type: 'hours', multiplier: 4, maxAllowed: 5 },
   { key: 'vigorous', label: 'vigorous intensity training', type: 'hours', multiplier: 8, maxAllowed: 4 },
-];
+]
 
 const sportsActivityWizard = new Scenes.WizardScene(
   'sports_activity_wizard',
