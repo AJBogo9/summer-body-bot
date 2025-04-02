@@ -14,7 +14,7 @@ SummerBodyBot is a Telegram bot designed to track and record competition scores 
 Clone the repository:
 
 ```bash
-git clone https://github.com/YourUsername/summer-body-bot.git
+git clone https://github.com/EppuRuotsalainen/summer-body-bot.git
 cd summer-body-bot
 ```
 
