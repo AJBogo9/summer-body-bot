@@ -41,7 +41,7 @@ const userSchema = new mongoose.Schema({
 
 userSchema.index({ team: 1 })
 
-userSchema.methods.addPoints = async function(pointsData) {
+userSchema.methods.addPoints = function(pointsData) {
   Object.keys(pointsData).forEach(key => {
     this.points[key] += pointsData[key]
     if (key.toString() === 'sportsTurn') { this.lastSubmission = new Date() }

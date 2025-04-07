@@ -82,10 +82,7 @@ const sportsActivityWizard = new Scenes.WizardScene(
       await ctx.reply(`Woah, ${value} ${unitLabel} of ${activity.label}? Send a DM to @EppuRuotsalainen to get your points or start again with /addexercise.`)
       return ctx.scene.leave()
     }
-    let pointsEarned = duration * activity.multiplier
-    if (pointsEarned > 10) {
-      pointsEarned = 10 + ((pointsEarned - 10) * 1.5) // For sport escapade week, 1.5x points if you get more than 10 points
-    }
+    const pointsEarned = duration * activity.multiplier
     ctx.wizard.state.activityValue = value
     ctx.wizard.state.convertedValue = activity.type === 'km' ? value : duration
     ctx.wizard.state.pointsEarned = pointsEarned
@@ -96,9 +93,9 @@ const sportsActivityWizard = new Scenes.WizardScene(
     ])
     let confirmMessage
     if (activity.type === 'km') {
-      confirmMessage = `You did ${activity.label} for ${value} ${unitLabel}, earning ${pointsEarned.toFixed(2)} points${pointsEarned > 10 ? ' (1.5x points for each point above 10 points)' : ''}. Do you confirm?`
+      confirmMessage = `You did ${activity.label} for ${value} ${unitLabel}, earning ${pointsEarned.toFixed(2)} points. Do you confirm?`
     } else {
-      confirmMessage = `You spent ${value} ${unitLabel} (${duration.toFixed(2)} hours) on ${activity.label}, earning ${pointsEarned.toFixed(2)} points${pointsEarned > 10 ? ' (1.5x points for each point above 10 points)' : ''}. Do you confirm?`
+      confirmMessage = `You spent ${value} ${unitLabel} (${duration.toFixed(2)} hours) on ${activity.label}, earning ${pointsEarned.toFixed(2)} points. Do you confirm?`
     }
     await ctx.reply(confirmMessage, confirmKeyboard)
     return ctx.wizard.next()
