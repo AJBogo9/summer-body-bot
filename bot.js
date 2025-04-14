@@ -15,7 +15,7 @@ bot.use(stage.middleware())
 
 /// Middleware for restricting available commands ///
 
-/*const allowedCommands = ['start', 'register', 'jointeam', 'createteam', 'rmuser', 'team', 'terms']
+const allowedCommands = ['terms', 'adjustpoints', 'statsinfo', 'feedback', 'leaderboards', 'team', 'summary', 'topguilds', 'topguildsall', 'topusers', 'morgons', 'tekkers', 'bruhh', 'eztikwin', 'olirigged']
 
 bot.use(async (ctx, next) => {
   if (ctx.message && ctx.message.text && ctx.message.text.startsWith('/')) {
@@ -30,12 +30,12 @@ bot.use(async (ctx, next) => {
         }
         return
       } else {
-        return ctx.reply('Competition hasn’t started yet, use /register to register to the competition.')
+        return ctx.reply('Point count has been freezed for the award ceremony. You can still look at the stats (see /statsinfo).')
       }
     }
   }
   await next()
-})*/
+})
 
 bot.command('help', (ctx) => { ctx.scene.enter('help_scene') })
 

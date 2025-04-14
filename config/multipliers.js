@@ -2,10 +2,10 @@ module.exports = {
   PointMultipliers: {
       sportsTurn: 5,
       trySport: 5,
-      tryRecipe: 10, // Double points for health week
-      goodSleep: 16, // Double points for health week
-      meditate: 10, // Double points for health week
-      lessAlc: 20, // Double points for health week
+      tryRecipe: 5,
+      goodSleep: 8,
+      meditate: 5,
+      lessAlc: 10,
   },
   DefaultPoints: {
       sportsTurn: 0,
