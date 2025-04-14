@@ -287,7 +287,7 @@ weekScoresWizard.action('confirm_details', async (ctx) => {
 weekScoresWizard.action('start_over', async (ctx) => {
   await ctx.editMessageText('starting over!')
   ctx.wizard.selectStep(0)
-    return ctx.wizard.steps[0](ctx)
+  return ctx.wizard.steps[0](ctx)
 })
 
 weekScoresWizard.action('exit_wizard', async (ctx) => {

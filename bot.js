@@ -53,6 +53,8 @@ bot.command('addexercise', onlyPrivate, (ctx) => { ctx.scene.enter('sports_activ
 
 bot.command('adjustpoints', onlyPrivate, (ctx) => { ctx.scene.enter('adjust_points_wizard') })
 
+bot.command('feedback', onlyPrivate, (ctx) => {ctx.scene.enter('feedback_wizard')})
+
 bot.command('leaderboards', (ctx) => { ctx.scene.enter('team_rankings_scene') })
 bot.command('team', (ctx) => { ctx.scene.enter('team_member_rankings_scene') })
 bot.command('summary', (ctx) => { ctx.scene.enter('user_summary_scene') })

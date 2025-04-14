@@ -22,4 +22,6 @@ module.exports = {
   deleteUserWizard: require('./delete-user').deleteUserWizard,
   // Admin Flow
   adjustPointsWizard: require('./adjust-points').adjustPointsWizard,
+  // Feedback flow
+  feedbackScene: require('./feedback').feedbackWizard,
 }
